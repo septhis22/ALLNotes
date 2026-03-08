@@ -33,7 +33,7 @@ export async function addNote(note: {
   id: string;
   title: string;
   content: string;
-  updatedAt: string;
+  updatedat: string;
   synced: boolean;
 }) {
   const db = await openDB();
@@ -94,7 +94,7 @@ id: string, updatedFields: { title?: string; content?: string; }) {
       // Update the fields
       if (updatedFields.title !== undefined) note.title = updatedFields.title;
       if (updatedFields.content !== undefined) note.content = updatedFields.content;
-      note.updatedAt = new Date().toISOString();
+      note.updatedat = new Date().toISOString();
       note.synced = false;
 
       const putRequest = store.put(note);

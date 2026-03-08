@@ -1,12 +1,7 @@
 import { getUnsyncedNotes,updateNoteSync } from "../IndexDB/db";
-import axios from 'axios';
-import getAuthToken from "./getToken";
-
-
-import React from 'react'
+import { notesRepository } from "../repositories";
 
 const autoSync= async(userId:string)=>{
-    const token = getAuthToken();
     const unsycnedNotes  = await getUnsyncedNotes(userId);
     if(userId!=="Guest"){
         try{
@@ -14,21 +9,12 @@ const autoSync= async(userId:string)=>{
             for(const note of unsycnedNotes){
                 try{
                     console.log(note);
-                    const res = await axios.post(
-                        "http://localhost:8080/update_notes",
-                        {
-                            _userId:note.userId,
-                            id:note.id,
-                            title:note.title,
-                            content:note.content,
-                            updatedAt:note.updatedAt,
-                        },  // Data object
-                        {
-                          headers: {
-                            'Authorization': `Bearer ${token}`
-                          }
-                        }  // Config object with headers
-                      );                      
+                    const res = await notesRepository.updateOwned({
+                      id: note.id,
+                      title: note.title,
+                      content: note.content,
+                      updatedat: note.updatedat || note.updatedAt,
+                    });
                     console.log(res);
                     updateNoteSync(note.id, true);
                 }catch(error){

@@ -1,12 +1,12 @@
-import React, { useEffect, useCallback, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthContext } from '../../Context/AuthContext';
 import { useStore } from '../../store/store';
 import { getAllNotes, addNote } from '../../IndexDB/db';
 import { v4 as uuidv4 } from 'uuid';
-import getAuthToken from '../../utils/getToken';
 import { useVerifyUser } from '../../utils/verifyUser';
 import { syncNotes } from '../../utils/ConflictHandler';
+import { notesRepository } from '../../repositories';
 
 
 interface Notes {
@@ -14,7 +14,7 @@ interface Notes {
   id: string;
   title: string;
   content: string;
-  updatedAt: string;
+  updatedat: string;
   synced: boolean;
 }
 
@@ -24,7 +24,8 @@ export const NoteList = () => {
 
   const[syncLoading ,setSyncLoading] = useState(true)
   const [isLoading, setIsLoading] = useState(true);
-  const { userId, id, setId, notes, setNotes, setUserId } = useStore();
+  const { userId, setUserId } = useAuthContext();
+  const { id, setId, notes, setNotes } = useStore();
   
   // ✅ CORRECT: Use the custom hook properly
   const verifyUser = useVerifyUser();
@@ -96,7 +97,7 @@ export const NoteList = () => {
       id: uuidv4(),
       title: '<h2>Untitled</h2>',
       content: '<p>Change Meee!!!!!!</p>',
-      updatedAt: new Date().toISOString(),
+      updatedat: new Date().toISOString(),
       synced: userId !== "Guest", // Only synced if not a guest
     };
 
@@ -104,40 +105,31 @@ export const NoteList = () => {
       // Always add the note locally first
       await addNote(newNote);
       setNotes((prevNotes) => [...prevNotes, newNote]);
+      
+      // Select the new note automatically
+      setId(newNote.id);
 
       // Only sync to cloud if user is authenticated
       if (userId !== "Guest") {
-        const token = getAuthToken();
-        if (token) {
-          await axios.post('http://localhost:8080/add_notes', {
-            userId: newNote.userId,
-            id: newNote.id,
-            title: newNote.title,
-            content: newNote.content,
-            updated_at: newNote.updatedAt,
-          }, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          // Update the note as synced
-          setNotes(prevNotes => 
-            prevNotes.map(note => 
-              note.id === newNote.id ? { ...note, synced: true } : note
-            )
-          );
-        }
+        await notesRepository.createWithOwner({
+          id: newNote.id,
+          title: newNote.title,
+          content: newNote.content,
+          updatedat: newNote.updatedat,
+        });
+
+        // Update the note as synced
+        setNotes(notes.map((note): Notes => 
+          note.id === newNote.id ? { ...note, synced: true } : note
+        ));
       }
     } catch (err) {
       console.error('Error creating new note:', err);
       
       // If cloud sync failed, mark as unsynced
-      setNotes(prevNotes => 
-        prevNotes.map(note => 
-          note.id === newNote.id ? { ...note, synced: false } : note
-        )
-      );
+      setNotes(notes.map((note): Notes => 
+        note.id === newNote.id ? { ...note, synced: false } : note
+      ));
       
       // Still refresh notes from local storage
       await fetchNotes();

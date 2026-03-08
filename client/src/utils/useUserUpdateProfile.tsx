@@ -1,47 +1,29 @@
 import { useCallback } from "react";
-import getAuthToken from "./getToken";
-import { useStore } from "../store/store";
-import axios from "axios";
+import { useAuthContext } from "../Context/AuthContext";
+import { profilesRepository } from "../repositories";
 
 const useUpdateProfile = () => {
-    const { userD, setUserD } = useStore();
+    const { userD, setUserD } = useAuthContext();
     
     const updateProfile = useCallback(async (): Promise<any> => {
-        const token = getAuthToken();
-        
-        if (!token) {
-            console.warn('No authentication token found');
-            return { error: 'No authentication token' };
-        }
-        
         if (userD.userName === "Guest") {
             try {
-                const response = await axios.get('http://localhost:8080/getProfile', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const profile = await profilesRepository.fetchCurrent();
                 
-                if (response && response.data && response.data.success) {
-                    // Access user data from the nested structure
-                    const userData = response.data.user;
+                if (profile) {
                     const temp = { 
-                        userName: userData.full_name || userData.email, // Fallback to email if no full_name
-                        email: userData.email 
+                        userName: profile.full_name || profile.email,
+                        email: profile.email 
                     };
                     console.log("From the update profile hook",temp);
                     setUserD(temp);
                     return { success: true, data: temp };
                 } else {
-                    return { error: 'Invalid response structure' };
+                    return { error: 'Profile not found' };
                 }
             } catch (error) {
                 console.error('Error updating profile:', error);
-                
-                // Handle different error types
-                if (axios.isAxiosError(error)) {
-                    const errorMessage = error.response?.data?.error || error.message;
-                    return { error: errorMessage };
-                }
-                
+
                 return { error: error instanceof Error ? error.message : String(error) };
             }
         }

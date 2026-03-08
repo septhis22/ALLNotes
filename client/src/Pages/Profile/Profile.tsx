@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import axios from "axios";
+import { useEffect, useState, useCallback } from 'react'
+import { useAuthContext } from '../../Context/AuthContext';
 import { useStore } from '../../store/store';
-import getAuthToken from '../../utils/getToken';
 import { useVerifyUser } from '../../utils/verifyUser';
 import Navbar from '../../component/Navbar/Navbar';
 import { getAllNotes } from '../../IndexDB/db';
+import { noteCollaboratorsRepository, profilesRepository } from '../../repositories';
 
 // Type definitions
 interface CollaborationEntry {
@@ -18,13 +18,14 @@ interface GroupedNoteData {
 }
 
 export const Profile: React.FC = () => {
-    const { setNotes, setUserD, userD, userId, setUserId, notes } = useStore();
-    const [noteIds, setNoteIds] = useState<CollaborationEntry[]>([]);
+    const { setUserD, userD, userId, setUserId } = useAuthContext();
+    const { notes, setNotes } = useStore();
     const [groupedData, setGroupedData] = useState<GroupedNoteData[]>([]);
     const [removeIds, setRemoveIds] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [processingRemoval, setProcessingRemoval] = useState<boolean>(false);
+    const [noteIds, setNoteIds] = useState<CollaborationEntry[]>([]);
     
     // Username change states
     const [newUsername, setNewUsername] = useState<string>('');
@@ -42,7 +43,6 @@ export const Profile: React.FC = () => {
       }, [setNotes, userId]);
     
     const verifyUser = useVerifyUser();
-    const token: string | null = getAuthToken();
     console.log("nnotes",notes);
     useEffect(() => {
         if (userId === "Guest") {
@@ -87,38 +87,18 @@ export const Profile: React.FC = () => {
 
     // Fetch collaboration data
     const fetchCollaborationData = useCallback(async (): Promise<void> => {
-        if (!token) {
-            setError("No authentication token available");
-            return;
-        }
-
         try {
             setLoading(true);
             setError(null);
-            
-            const response = await axios.get(
-                "http://localhost:8080/getCollabUsers", 
-                {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                }
-            );
+            const response = await noteCollaboratorsRepository.getCollaboratorsForOwnedNotes();
             
             let collaborationData: CollaborationEntry[] = [];
             
-            if (Array.isArray(response.data)) {
-                collaborationData = response.data;
-            } else if (response.data && Array.isArray(response.data.data)) {
-                collaborationData = response.data.data;
-            } else if (response.data && typeof response.data === 'object') {
-                if (response.data.note_id && response.data.user_id) {
-                    collaborationData = [response.data];
-                } else {
-                    setError("Received unexpected data format from server");
-                    return;
-                }
-            } else {
-                setError("No valid collaboration data received from server");
-                return;
+            if (Array.isArray(response)) {
+                collaborationData = response.map((entry) => ({
+                    note_id: entry.note_id,
+                    user_id: entry.user_id,
+                }));
             }
             
             const validData = collaborationData.filter((entry: any) => 
@@ -130,35 +110,22 @@ export const Profile: React.FC = () => {
             setGroupedData(grouped);
             
         } catch (err) {
-            const errorMessage = axios.isAxiosError(err) 
-                ? err.response?.data?.message || err.message 
-                : "An unexpected error occurred";
+            const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
             setError(errorMessage);
         } finally {
             setLoading(false);
         }
-    }, [token, groupUsersByNote]);
+    }, [groupUsersByNote]);
 
     // Handle user removal from a specific note
     const handleRemoveUser = async (noteId: string, userIdToRemove: string): Promise<void> => {
-        if (!token) {
-            setError("No authentication token available");
-            return;
-        }
-
         const removalKey = `${noteId}-${userIdToRemove}`;
         
         try {
             setProcessingRemoval(true);
             setRemoveIds(prev => [...prev, removalKey]);
-            
-            const response = await axios.post(
-                'http://localhost:8080/removeUser',
-                {removeId:userIdToRemove,id:noteId},
-                {
-                    headers:{'Authorization': `Bearer ${token}`}
-                }
-            );
+
+            await noteCollaboratorsRepository.removeCollaborators(noteId, [userIdToRemove]);
 
             setNoteIds(prev => prev.filter(entry => 
                 !(entry.note_id === noteId && entry.user_id === userIdToRemove)
@@ -180,9 +147,7 @@ export const Profile: React.FC = () => {
             
         } catch (err) {
             console.error("Error removing user:", err);
-            const errorMessage = axios.isAxiosError(err) 
-                ? `${err.response?.status}: ${err.response?.data?.message || err.message}`
-                : "Failed to remove user from collaboration";
+            const errorMessage = err instanceof Error ? err.message : "Failed to remove user from collaboration";
             setError(errorMessage);
             setRemoveIds(prev => prev.filter(id => id !== removalKey));
         } finally {
@@ -192,10 +157,6 @@ export const Profile: React.FC = () => {
 
     // Delete all users from collaboration
     const deleteUsersFromCollab = async (note_id:string,user_ids:string[]): Promise<void> => {
-        if (!token) {
-            setError("No authentication token available");
-            return;
-        }
         console.log("data: ", note_id, user_ids);
         // Remove the current user from the list of user_ids to avoid removing yourself
         const filteredUserIds = user_ids.filter(uid => uid !== userId);
@@ -206,25 +167,15 @@ export const Profile: React.FC = () => {
         try {
             setLoading(true);
             setError(null);
-            
-            await axios.post(
-                "http://localhost:8080/removeUser",
-                {
-                    removeId:filteredUserIds,
-                    id:note_id
-                },{
-                    headers:{'Authorization': `Bearer ${token}`}
-                }
-            );
+
+            await noteCollaboratorsRepository.removeCollaborators(note_id, filteredUserIds);
 
             setNoteIds([]);
             setGroupedData([]);
             setRemoveIds([]);
             
         } catch (err) {
-            const errorMessage = axios.isAxiosError(err) 
-                ? err.response?.data?.message || err.message 
-                : "Failed to delete users from collaboration";
+            const errorMessage = err instanceof Error ? err.message : "Failed to delete users from collaboration";
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -241,10 +192,7 @@ export const Profile: React.FC = () => {
 
         try {
             setUsernameLoading(true);
-            const response = await axios.post('http://localhost:8080/updateUsername', 
-                { userName: newUsername }, 
-                { headers: { 'Authorization': `Bearer ${token}` } }
-            );
+            await profilesRepository.updateCurrentUserName(newUsername);
             const email = userD.email;
             setUserD({userName:newUsername,email:email});
             setIsEditingUsername(false);

@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '../../component/Navbar/Navbar';
 import { Link } from 'react-router-dom';
 import PasswordInput from '../../component/Input/PasswordInput';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../../store/store';
+import { useAuthContext } from '../../Context/AuthContext';
 import { syncNotes } from '../../utils/ConflictHandler';
 import { useVerifyUser } from '../../utils/verifyUser';
 import useUpdateProfile from '../../utils/useUserUpdateProfile';
@@ -20,15 +20,13 @@ export async function loginWithEmail(email: string, password: string) {
 const Login = () => {
   const updateProfile = useUpdateProfile();
   const navigate = useNavigate();
-  const [isVerified, setIsVerified] = useState(false);
-  const [user, setUser] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const { userId, setUserId } = useStore();
-  const verifyUser = useVerifyUser(); // Use the custom hook
+  const { userId, setUserId } = useAuthContext();
+  const verifyUser = useVerifyUser();
 
   // Check for existing valid token on component mount
   useEffect(() => {
@@ -36,10 +34,8 @@ const Login = () => {
       try {
         const verifiedUserId = await verifyUser();
         if (verifiedUserId && verifiedUserId !== "Guest") {
-          setUser(verifiedUserId);
           console.log('Auto-login successful for user:', verifiedUserId);
           updateProfile();
-          setIsVerified(true);
         } else {
           console.log('No valid session found');
         }
@@ -80,7 +76,6 @@ const Login = () => {
         setError(error.message);
       } else if (data.user?.id) {
         setUserId(data.user.id);
-        setUser(data.user.id);
         console.log('Manual login successful for user:', data.user.id);
         
         syncNotes(data.user.id, () => {

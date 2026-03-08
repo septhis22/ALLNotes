@@ -1,27 +1,23 @@
-import axios from "axios";
 import { addNote, getAllNotes, updateNoteById } from "../IndexDB/db";
 import autoSync from "./autoSync";
-import getAuthToken from "./getToken";
+import { notesRepository } from "../repositories";
 
 interface noteInterface {
   userId: string;
   id: string;
   title: string;
   content: string;
-  updatedAt: string;
+  updatedat: string;
   synced: boolean;
 }
 
 export const syncNotes = async (userId: string,setIsLoading:React.Dispatch<React.SetStateAction<boolean>>) => {
   const notesFromOffline = await getAllNotes(userId);
   let notesFromOnline: any;
-  const token = getAuthToken();
   
   try {
-    notesFromOnline = await axios.get("http://localhost:8080/getAllNotes", {
-     headers : {'Authorization': `Bearer ${token}`}
-  });
-    console.log("the notes from online", notesFromOnline.data);
+    notesFromOnline = await notesRepository.fetchOwnedNotes();
+    console.log("the notes from online", notesFromOnline);
   } catch (e) {
     console.log("error", e);
     return; // Exit if we can't get online notes
@@ -29,8 +25,8 @@ export const syncNotes = async (userId: string,setIsLoading:React.Dispatch<React
 
   // Convert online notes array to a map for easier lookup
   const onlineNotesMap = new Map();
-  if (notesFromOnline.data && Array.isArray(notesFromOnline.data)) {
-    notesFromOnline.data.forEach((note: noteInterface) => {
+  if (notesFromOnline && Array.isArray(notesFromOnline)) {
+    notesFromOnline.forEach((note: any) => {
       onlineNotesMap.set(note.id, note);
     });
   }
@@ -41,7 +37,7 @@ export const syncNotes = async (userId: string,setIsLoading:React.Dispatch<React
     
     if (onlineNote) {
       // Compare timestamps to determine which version is newer
-      const offlineTime = new Date(offlineNote.updatedAt).getTime();
+      const offlineTime = new Date(offlineNote.updatedat).getTime();
       const onlineTime = new Date(onlineNote.updatedat).getTime();
       console.log("offlineTime: ",offlineTime);
       console.log("Online Time: ",onlineTime);
@@ -53,8 +49,8 @@ export const syncNotes = async (userId: string,setIsLoading:React.Dispatch<React
       } else if (onlineTime > offlineTime) {
         // Online version is newer - update local copy
         console.log("the route was hit",onlineNote.content);
-        let content = onlineNote.content;
-        let title = onlineNote.title;
+        const content = onlineNote.content;
+        const title = onlineNote.title;
         await updateNoteById(offlineNote.id, {title, content});
       }
       // If timestamps are equal, no action needed
@@ -75,7 +71,7 @@ export const syncNotes = async (userId: string,setIsLoading:React.Dispatch<React
       id: onlineNote.id,
       title: onlineNote.title,
       content: onlineNote.content,
-      updatedAt: onlineNote.updatedat,
+      updatedat: onlineNote.updatedat,
       synced: true
     };
     console.log("this was hit");

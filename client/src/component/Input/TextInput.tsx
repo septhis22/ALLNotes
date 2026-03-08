@@ -1,7 +1,8 @@
-import React, { useCallback, useRef, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import debounce from "lodash.debounce";
+import { useAuthContext } from "../../Context/AuthContext";
 import { useStore } from "../../store/store";
 import { updateNoteById, updateNoteSync } from "../../IndexDB/db";
 import autoSync from "../../utils/autoSync";
@@ -13,7 +14,8 @@ export const NoteEditor = () => {
   const [showAddCollab, setShowAddCollab] = useState<boolean>(false);
   const [content, setContent] = useState<string>("");
   const [isSyncing, setIsSyncing] = useState(false);
-  const { userId, id, notes, setNotes } = useStore();
+  const { userId } = useAuthContext();
+  const { id, notes, setNotes } = useStore();
 
   // Quill modules and formats
   const modules = {

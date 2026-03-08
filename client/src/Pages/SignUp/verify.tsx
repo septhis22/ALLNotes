@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, useSubmit } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import axios from "axios";
+import { profilesRepository } from '../../repositories'
 
 export const Verify = () => {
   const navigate = useNavigate();
@@ -11,7 +11,6 @@ export const Verify = () => {
   const [isResending, setIsResending] = useState<boolean>(false);
   const [isAdding, setIsAdding] =  useState(true);
   const [name,setName] = useState("User");
-  let _token:string;
   useEffect(() => {
     const handleVerification = async () => {
       try {
@@ -61,7 +60,6 @@ export const Verify = () => {
             setErrorMessage(`Failed to set session: ${error.message}`);
           } else {
             console.log('Session set successfully:', data);
-            _token = String(data.session?.access_token);
             setVerificationStatus('success');
             
             // Check current user
@@ -137,7 +135,7 @@ export const Verify = () => {
 
   const handleAddName= async ()=>{
     try{
-      const response = await axios.post("http://localhost:8080/addName",{name:name},{headers:{'Authorization':`Bearer ${_token}`}});
+      await profilesRepository.addOrUpdateName(name);
       console.log("Name Updated succesfully");
     }catch{
       console.log("eror adding the name");

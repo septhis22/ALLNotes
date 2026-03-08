@@ -1,17 +1,14 @@
-import React, { useEffect, useId, useState } from 'react';
-import userIcon from '/user_icon.png'; // adjust the path if needed
+import React, { useEffect } from 'react';
+import userIcon from '/user_icon.png';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { deleteAllUserNotes } from '../../IndexDB/db';
-import { useStore } from '../../store/store';
-import getAuthToken from '../../utils/getToken';
+import { useAuthContext } from '../../Context/AuthContext';
 import { useVerifyUser } from '../../utils/verifyUser';
 import useUpdateProfile from '../../utils/useUserUpdateProfile';
 export const Navbar = () => {
   
-  const {userD,userId,setUserId} = useStore();
+  const { userD, userId, setUserId } = useAuthContext();
   const navigate = useNavigate();
-  const token = getAuthToken();
   const verifyUser = useVerifyUser();
   const updateProfile = useUpdateProfile();
 

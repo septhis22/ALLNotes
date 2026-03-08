@@ -5,11 +5,11 @@ import Quill from 'quill';
 import QuillCursors from 'quill-cursors';
 import 'quill/dist/quill.snow.css';
 import { WebsocketProvider } from "y-websocket";
-import axios from 'axios';
-import getAuthToken from '../../utils/getToken';
 import { useSearchParams } from 'react-router-dom';
 import LoginInCollab from '../Login/lgoin_in_collab';
 import { Users, Circle, Save, Wifi, WifiOff } from 'lucide-react';
+import { noteCollaboratorsRepository, notesRepository } from '../../repositories';
+import { supabase } from '../../lib/supabase';
 
 
 Quill.register('modules/cursors', QuillCursors);
@@ -92,20 +92,13 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     console.log("Permission useEffect triggered");
     const checkPermission = async () => {
       console.log("Starting permission check...");
-      const token = getAuthToken();
-      console.log("the user found:",token);
       try {
-        const response = await axios.get("http://localhost:8080/verifyPermission", {
-          params: { id: roomName },
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        setUserId(response.data.userId)
-        console.log("Permission API response:", response.data.data);
-        
-        const per = response.data.data[0]?.permission || [];
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData.user?.id) {
+          setUserId(authData.user.id);
+        }
+
+        const per = await noteCollaboratorsRepository.getPermissionForCurrentUser(roomName);
         console.log("Extracted permissions:", per);
         
         if (per.includes("r") && per.includes("w")) {
@@ -288,15 +281,13 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
   // Debug function to manually log content
   const debugLogContent = async() => {
-    const token = getAuthToken();
     try{
-      const response = await axios.post("http://localhost:8080/update_notes",{
+      await notesRepository.updateOwned({
         id: roomName,
-        _userId: userId,
         title: "for now exp",
         content: content,
-        updatedAt: new Date().toISOString()
-      },{headers:{'Authorization':`Bearer ${token}`}});
+        updatedat: new Date().toISOString()
+      });
     }catch{
       alert("you are not the owner of the file!!!");
     }

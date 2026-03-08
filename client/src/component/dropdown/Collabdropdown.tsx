@@ -1,23 +1,20 @@
-import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useState, useRef, useEffect } from "react";
 import { useStore } from "../../store/store";
-import getAuthToken from "../../utils/getToken";
+import { noteCollaboratorsRepository } from "../../repositories";
 
 interface CollabdropdownProps {
   onClose: () => void;
 }
 
 const Collabdropdown: React.FC<CollabdropdownProps> = ({ onClose }) => {
-  const { id, userId } = useStore();
+  const { id } = useStore();
   
   const [email, setEmail] = useState<string>("");
   const [verifiedEmail, setVerifiedEmail] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  let link = `http://localhost:5173/collab?id=${encodeURIComponent(id)}`;
+  const link = `http://localhost:5173/collab?id=${encodeURIComponent(id)}`;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -37,7 +34,6 @@ const Collabdropdown: React.FC<CollabdropdownProps> = ({ onClose }) => {
     setIsLoading(true);
     try {
       // Send invites to all verified emails
-      const token = getAuthToken();
       // await axios.post("http://localhost:8080/sendInvites", {
       //   noteId: id,
       //   emails: verifiedEmail
@@ -80,24 +76,19 @@ const Collabdropdown: React.FC<CollabdropdownProps> = ({ onClose }) => {
     e.preventDefault();
     if (!email.trim()) return;
 
-    const token = getAuthToken();
     setIsLoading(true);
     
     try {
-      const response = await axios.get("http://localhost:8080/verifyMail", { 
-        params: { email: email, note_id: id }, 
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const response = await noteCollaboratorsRepository.addCollaboratorByEmail(id, email);
       
-      if (response.status === 200) {
-        console.log("Received data", response.data["id"]);
+      if (response) {
         if (email && !verifiedEmail.includes(email)) {
           setVerifiedEmail(prev => [...prev, email]);
         }
-        setEmail(""); // Clear input after successful add
+        setEmail("");
       }
-    } catch (error: any) {
-      if (error.response && error.response.status === 404) {
+    } catch (error) {
+      if (error instanceof Error && error.message.toLowerCase().includes("not found")) {
         alert("User is not registered or invalid email");
       } else {
         console.error(error);
@@ -197,4 +188,3 @@ export default Collabdropdown;
 function fallbackCopyToClipboard(link: string) {
   throw new Error("Function not implemented.");
 }
-

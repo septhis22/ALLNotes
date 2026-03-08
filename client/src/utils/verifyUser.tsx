@@ -1,27 +1,17 @@
 // utils/useVerifyUser.ts
 import { useCallback } from "react";
-import getAuthToken from "./getToken";
-import { useStore } from "../store/store";
+import { useAuthContext } from "../Context/AuthContext";
 import { supabase } from "../lib/supabase";
 
 export const useVerifyUser = () => {
-  const { userId, setUserId, setUserD } = useStore();
+  const { userId, setUserId } = useAuthContext();
 
   const verifyUser = useCallback(async (): Promise<string | null> => {
     console.log('Current userId:', userId);
     
     if (userId === "Guest" || !userId) {
       try {
-        
-        const token = getAuthToken() ?? "";
-        console.log('Token:', token);
-        
-        if (!token) {
-          console.log("No token found");
-          return null;
-        }
-
-        const { data: { user }, error } = await supabase.auth.getUser(token);
+        const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error) {
           console.log("Token verification failed:", error);
