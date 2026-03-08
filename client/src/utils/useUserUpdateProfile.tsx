@@ -1,10 +1,10 @@
 import { useCallback } from "react";
 import getAuthToken from "./getToken";
-import { useGlobalContext } from "../Context/context";
+import { useStore } from "../store/store";
 import axios from "axios";
 
 const useUpdateProfile = () => {
-    const { userD, setUserD } = useGlobalContext();
+    const { userD, setUserD } = useStore();
     
     const updateProfile = useCallback(async (): Promise<any> => {
         const token = getAuthToken();

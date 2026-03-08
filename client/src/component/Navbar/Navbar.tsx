@@ -1,15 +1,15 @@
 import React, { useEffect, useId, useState } from 'react';
 import userIcon from '/user_icon.png'; // adjust the path if needed
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../supabase/supabase';
+import { supabase } from '../../lib/supabase';
 import { deleteAllUserNotes } from '../../IndexDB/db';
-import { useGlobalContext } from '../../Context/context';
+import { useStore } from '../../store/store';
 import getAuthToken from '../../utils/getToken';
 import { useVerifyUser } from '../../utils/verifyUser';
 import useUpdateProfile from '../../utils/useUserUpdateProfile';
 export const Navbar = () => {
   
-  const {userD,userId,setUserId} = useGlobalContext();
+  const {userD,userId,setUserId} = useStore();
   const navigate = useNavigate();
   const token = getAuthToken();
   const verifyUser = useVerifyUser();

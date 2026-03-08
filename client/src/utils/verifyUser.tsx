@@ -1,11 +1,11 @@
 // utils/useVerifyUser.ts
 import { useCallback } from "react";
 import getAuthToken from "./getToken";
-import { useGlobalContext } from "../Context/context";
-import { supabase } from "../supabase/supabase";
+import { useStore } from "../store/store";
+import { supabase } from "../lib/supabase";
 
 export const useVerifyUser = () => {
-  const { userId, setUserId,setUserD} = useGlobalContext();
+  const { userId, setUserId, setUserD } = useStore();
 
   const verifyUser = useCallback(async (): Promise<string | null> => {
     console.log('Current userId:', userId);

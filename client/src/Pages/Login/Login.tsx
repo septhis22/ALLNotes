@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import Navbar from '../../component/Navbar/Navbar';
 import { Link } from 'react-router-dom';
 import PasswordInput from '../../component/Input/PasswordInput';
-import { supabase } from '../../supabase/supabase';
+import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { useGlobalContext } from '../../Context/context';
+import { useStore } from '../../store/store';
 import { syncNotes } from '../../utils/ConflictHandler';
 import { useVerifyUser } from '../../utils/verifyUser';
 import useUpdateProfile from '../../utils/useUserUpdateProfile';
@@ -27,7 +27,7 @@ const Login = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const { userId, setUserId } = useGlobalContext();
+  const { userId, setUserId } = useStore();
   const verifyUser = useVerifyUser(); // Use the custom hook
 
   // Check for existing valid token on component mount

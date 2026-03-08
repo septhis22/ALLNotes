@@ -1,5 +1,4 @@
 import axios from "axios";
-import { useGlobalContext } from "../Context/context";
 import { addNote, getAllNotes, updateNoteById } from "../IndexDB/db";
 import autoSync from "./autoSync";
 import getAuthToken from "./getToken";

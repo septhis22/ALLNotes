@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Navbar from '../../component/Navbar/Navbar';
 import { data, Link } from 'react-router-dom';
 import PasswordInput from '../../component/Input/PasswordInput';
-import { supabase } from '../../supabase/supabase';
+import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 

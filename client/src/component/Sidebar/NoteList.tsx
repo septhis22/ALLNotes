@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { useGlobalContext } from '../../Context/context';
+import { useStore } from '../../store/store';
 import { getAllNotes, addNote } from '../../IndexDB/db';
 import { v4 as uuidv4 } from 'uuid';
 import getAuthToken from '../../utils/getToken';
@@ -24,7 +24,7 @@ export const NoteList = () => {
 
   const[syncLoading ,setSyncLoading] = useState(true)
   const [isLoading, setIsLoading] = useState(true);
-  const { userId, id, setId, notes, setNotes, setUserId } = useGlobalContext();
+  const { userId, id, setId, notes, setNotes, setUserId } = useStore();
   
   // ✅ CORRECT: Use the custom hook properly
   const verifyUser = useVerifyUser();

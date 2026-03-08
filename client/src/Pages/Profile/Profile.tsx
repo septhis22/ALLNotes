@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import axios from "axios";
-import { useGlobalContext } from '../../Context/context';
+import { useStore } from '../../store/store';
 import getAuthToken from '../../utils/getToken';
 import { useVerifyUser } from '../../utils/verifyUser';
 import Navbar from '../../component/Navbar/Navbar';
@@ -18,7 +18,7 @@ interface GroupedNoteData {
 }
 
 export const Profile: React.FC = () => {
-    const { setNotes,setUserD,userD,userId, setUserId,notes} = useGlobalContext();
+    const { setNotes, setUserD, userD, userId, setUserId, notes } = useStore();
     const [noteIds, setNoteIds] = useState<CollaborationEntry[]>([]);
     const [groupedData, setGroupedData] = useState<GroupedNoteData[]>([]);
     const [removeIds, setRemoveIds] = useState<string[]>([]);

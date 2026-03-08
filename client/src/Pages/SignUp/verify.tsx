@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, useSubmit } from 'react-router-dom'
-import { supabase } from '../../supabase/supabase'
+import { supabase } from '../../lib/supabase'
 import axios from "axios";
 
 export const Verify = () => {

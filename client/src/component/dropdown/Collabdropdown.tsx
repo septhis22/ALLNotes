@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useGlobalContext } from "../../Context/context";
+import { useStore } from "../../store/store";
 import getAuthToken from "../../utils/getToken";
 
 interface CollabdropdownProps {
@@ -9,7 +9,7 @@ interface CollabdropdownProps {
 }
 
 const Collabdropdown: React.FC<CollabdropdownProps> = ({ onClose }) => {
-  const { id, userId } = useGlobalContext();
+  const { id, userId } = useStore();
   
   const [email, setEmail] = useState<string>("");
   const [verifiedEmail, setVerifiedEmail] = useState<string[]>([]);
