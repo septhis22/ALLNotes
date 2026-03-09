@@ -1,3 +1,3 @@
-export * from './notes.repository';
-export * from './profiles.repository';
-export * from './note_collaborators.repository';
+export * from './notes.repository.ts';
+export * from './profiles.repository.ts';
+export * from './note_collaborators.repository.ts';

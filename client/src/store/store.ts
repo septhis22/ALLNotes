@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 
 export interface Note {
-  [x: string]: string | number | Date;
-  synced: any;
-  updatedat: string | number | Date;
+  userId: string;
   id: string;
   title: string;
   content: string;
+  updatedat: string;
+  synced: boolean;
 }
 
 export interface UserDetails {
@@ -23,7 +23,7 @@ interface GlobalStore {
 
   // Actions
   setId: (id: string) => void;
-  setNotes: (notes: Note[]) => void;
+  setNotes: (notes: Note[] | ((prevNotes: Note[]) => Note[])) => void;
   setUserId: (userId: string) => void;
   setUserD: (userD: UserDetails) => void;
 }
@@ -37,7 +37,10 @@ export const useStore = create<GlobalStore>((set) => ({
 
   // Actions
   setId: (id: string) => set({ id }),
-  setNotes: (notes: Note[]) => set({ notes }),
+  setNotes: (notesOrFn: Note[] | ((prevNotes: Note[]) => Note[])) => 
+    set((state) => ({ 
+      notes: typeof notesOrFn === 'function' ? notesOrFn(state.notes) : notesOrFn 
+    })),
   setUserId: (userId: string) => set({ userId }),
   setUserD: (userD: UserDetails) => set({ userD }),
 }));

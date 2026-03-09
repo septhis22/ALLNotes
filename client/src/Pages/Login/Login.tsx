@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Navbar from '../../component/Navbar/Navbar';
 import { Link } from 'react-router-dom';
 import PasswordInput from '../../component/Input/PasswordInput';
-import { supabase } from '../../lib/supabase';
+import { getSupabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../Context/AuthContext';
 import { syncNotes } from '../../utils/ConflictHandler';
@@ -10,7 +10,7 @@ import { useVerifyUser } from '../../utils/verifyUser';
 import useUpdateProfile from '../../utils/useUserUpdateProfile';
 
 export async function loginWithEmail(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await getSupabase().auth.signInWithPassword({
     email,
     password,
   });
@@ -77,6 +77,9 @@ const Login = () => {
       } else if (data.user?.id) {
         setUserId(data.user.id);
         console.log('Manual login successful for user:', data.user.id);
+        
+        // Ensure profile exists
+        await updateProfile();
         
         syncNotes(data.user.id, () => {
           setIsAuthenticating(false);

@@ -9,7 +9,7 @@ import { useSearchParams } from 'react-router-dom';
 import LoginInCollab from '../Login/lgoin_in_collab';
 import { Users, Circle, Save, Wifi, WifiOff } from 'lucide-react';
 import { noteCollaboratorsRepository, notesRepository } from '../../repositories';
-import { supabase } from '../../lib/supabase';
+import { getSupabase } from '../../lib/supabase';
 
 
 Quill.register('modules/cursors', QuillCursors);
@@ -93,7 +93,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     const checkPermission = async () => {
       console.log("Starting permission check...");
       try {
-        const { data: authData } = await supabase.auth.getUser();
+        const { data: authData } = await getSupabase().auth.getUser();
         if (authData.user?.id) {
           setUserId(authData.user.id);
         }

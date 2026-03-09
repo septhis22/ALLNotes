@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Navbar from '../../component/Navbar/Navbar';
 import { data, Link } from 'react-router-dom';
 import PasswordInput from '../../component/Input/PasswordInput';
-import { supabase } from '../../lib/supabase';
+import { getSupabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -12,7 +12,7 @@ interface LoginInCollabProps {
   
 
 export async function loginWithEmail(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await getSupabase().auth.signInWithPassword({
     email,
     password,
   });

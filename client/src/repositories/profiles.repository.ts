@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../lib/supabase.ts';
 
 export interface ProfileRow {
   id: string;
@@ -7,7 +7,7 @@ export interface ProfileRow {
 }
 
 const getCurrentUser = async () => {
-  const { data, error } = await supabase.auth.getUser();
+  const { data, error } = await getSupabase().auth.getUser();
   if (error || !data.user) {
     throw new Error(error?.message ?? 'User not authenticated');
   }
@@ -18,7 +18,7 @@ export const profilesRepository = {
   async fetchCurrent(): Promise<ProfileRow | null> {
     const user = await getCurrentUser();
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('profiles')
       .select('id, email, full_name')
       .eq('id', user.id)
@@ -31,7 +31,7 @@ export const profilesRepository = {
   async updateCurrentUserName(userName: string): Promise<ProfileRow | null> {
     const user = await getCurrentUser();
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('profiles')
       .update({ full_name: userName.trim() })
       .eq('id', user.id)
@@ -45,13 +45,13 @@ export const profilesRepository = {
   async addOrUpdateName(name: string): Promise<ProfileRow | null> {
     const user = await getCurrentUser();
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('profiles')
-      .update({
+      .upsert({
+        id: user.id,
         email: user.email ?? '',
         full_name: name.trim(),
       })
-      .eq('id', user.id)
       .select('id, email, full_name')
       .maybeSingle();
 

@@ -1,7 +1,7 @@
 // utils/useVerifyUser.ts
 import { useCallback } from "react";
 import { useAuthContext } from "../Context/AuthContext";
-import { supabase } from "../lib/supabase";
+import { getSupabase } from "../lib/supabase";
 
 export const useVerifyUser = () => {
   const { userId, setUserId } = useAuthContext();
@@ -11,7 +11,7 @@ export const useVerifyUser = () => {
     
     if (userId === "Guest" || !userId) {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const { data: { user }, error } = await getSupabase().auth.getUser();
         
         if (error) {
           console.log("Token verification failed:", error);

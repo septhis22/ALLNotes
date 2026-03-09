@@ -1,15 +1,7 @@
 import { addNote, getAllNotes, updateNoteById } from "../IndexDB/db";
 import autoSync from "./autoSync";
 import { notesRepository } from "../repositories";
-
-interface noteInterface {
-  userId: string;
-  id: string;
-  title: string;
-  content: string;
-  updatedat: string;
-  synced: boolean;
-}
+import { type Note } from "../store/store";
 
 export const syncNotes = async (userId: string,setIsLoading:React.Dispatch<React.SetStateAction<boolean>>) => {
   const notesFromOffline = await getAllNotes(userId);
@@ -66,7 +58,7 @@ export const syncNotes = async (userId: string,setIsLoading:React.Dispatch<React
 
   // Add notes that exist online but not offline
   for (const [id, onlineNote] of onlineNotesMap) {
-    const newNote: noteInterface = {
+    const newNote: Note = {
       userId:userId,
       id: onlineNote.id,
       title: onlineNote.title,

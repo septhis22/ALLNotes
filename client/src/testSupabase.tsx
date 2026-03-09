@@ -1,26 +1,20 @@
-import { supabase } from './lib/supabase';
+import { getSupabase } from './lib/supabase';
 
 const testSupabaseConnection = async () => {
   console.log('🔍 Testing Supabase Connection...\n');
 
   try {
-  // Test 1: Check if client is configured
-  console.log('1. Checking Supabase client configuration...');
-  const supabaseUrl = import.meta.env.VITE_supabaseurl;
-  const supabaseAnonKey = import.meta.env.VITE_annonkey;
-  
-  console.log('   URL:', supabaseUrl || 'MISSING');
-  console.log('   Key:', supabaseAnonKey ? 'Set (' + supabaseAnonKey.substring(0, 20) + '...)' : 'MISSING');
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('❌ Supabase environment variables not set!');
-    return false;
-  }
-  console.log('✅ Supabase client configured correctly\n');
+    // Test 1: Check if client is configured
+    console.log('1. Checking Supabase client configuration...');
+    
+    // We can't easily check the raw config since it's now internal to getSupabase,
+    // but we can try to get the client.
+    const client = getSupabase();
+    console.log('✅ Supabase client initialized');
 
     // Test 2: Check current auth session
     console.log('2. Checking current auth session...');
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await client.auth.getSession();
     
     if (sessionError) {
       console.error('❌ Session check failed:', sessionError.message);
@@ -38,7 +32,7 @@ const testSupabaseConnection = async () => {
 
     // Test 3: Try to fetch profiles table
     console.log('3. Testing profiles table access...');
-    const { data: profileData, error: profileError } = await supabase
+    const { data: profileData, error: profileError } = await client
       .from('profiles')
       .select('*')
       .limit(1);
@@ -52,7 +46,7 @@ const testSupabaseConnection = async () => {
 
     // Test 4: Try to fetch notes table
     console.log('4. Testing notes table access...');
-    const { data: notesData, error: notesError } = await supabase
+    const { data: notesData, error: notesError } = await client
       .from('notes')
       .select('*')
       .limit(1);
@@ -66,7 +60,7 @@ const testSupabaseConnection = async () => {
 
     // Test 5: Try to fetch note_collaborators table
     console.log('5. Testing note_collaborators table access...');
-    const { data: collabData, error: collabError } = await supabase
+    const { data: collabData, error: collabError } = await client
       .from('note_collaborators')
       .select('*')
       .limit(1);
@@ -90,4 +84,6 @@ const testSupabaseConnection = async () => {
 export { testSupabaseConnection };
 
 // Auto-run if imported directly
-testSupabaseConnection();
+if (typeof window !== 'undefined') {
+  (window as any).testSupabaseConnection = testSupabaseConnection;
+}

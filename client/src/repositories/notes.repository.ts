@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../lib/supabase.ts';
 
 export interface NoteRow {
   id: string;
@@ -23,7 +23,7 @@ export interface UpdateNoteInput {
 }
 
 const getCurrentUserId = async (): Promise<string> => {
-  const { data, error } = await supabase.auth.getUser();
+  const { data, error } = await getSupabase().auth.getUser();
   if (error || !data.user?.id) {
     throw new Error(error?.message ?? 'User not authenticated');
   }
@@ -33,7 +33,7 @@ const getCurrentUserId = async (): Promise<string> => {
 export const notesRepository = {
   async fetchOwnedNotes(): Promise<NoteRow[]> {
     const userId = await getCurrentUserId();
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('notes')
       .select('*')
       .eq('owner', userId)
@@ -44,7 +44,7 @@ export const notesRepository = {
   },
 
   async fetchById(id: string): Promise<NoteRow | null> {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('notes')
       .select('*')
       .eq('id', id)
@@ -57,7 +57,7 @@ export const notesRepository = {
   async createWithOwner(input: CreateNoteInput): Promise<NoteRow> {
     const owner = await getCurrentUserId();
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('notes')
       .insert([
         {
@@ -73,7 +73,7 @@ export const notesRepository = {
 
     if (error) throw error;
 
-    const { error: collaboratorError } = await supabase
+    const { error: collaboratorError } = await getSupabase()
       .from('note_collaborators')
       .insert([
         {
@@ -89,7 +89,7 @@ export const notesRepository = {
 
   async updateOwned(input: UpdateNoteInput): Promise<NoteRow | null> {
     const owner = await getCurrentUserId();
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('notes')
       .update({
         title: input.title,

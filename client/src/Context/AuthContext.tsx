@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import type { JSX, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+import { getSupabase } from "../lib/supabase";
 
 // ── Types ──────────────────────────────────────────────────
 export interface UserProfile {
@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
 
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from("profiles")
         .select("email, full_name")
         .eq("id", userId)
@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
       console.log('🔐 Initializing auth...');
       
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session }, error } = await getSupabase().auth.getSession();
         
         if (!isMounted) return;
         
@@ -127,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
           setUserId(authUser.id);
           // Try to fetch profile
           try {
-            const { data: profileData } = await supabase
+            const { data: profileData } = await getSupabase()
               .from("profiles")
               .select("email, full_name")
               .eq("id", authUser.id)
@@ -168,28 +168,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = getSupabase().auth.onAuthStateChange(
       (_event, session) => {
         console.log('🔄 Auth state changed:', _event);
         if (!isMounted) return;
         
-        const authUser = session?.user ?? null;
-        setUser(authUser);
-        setSession(session);
-        
-        if (authUser) {
-          setUserId(authUser.id);
-          setUserD({ 
-            userName: authUser.email?.split('@')[0] ?? "User", 
-            email: authUser.email ?? "" 
-          });
-        } else {
-          setUserId("Guest");
-          setUserD({ userName: "Guest", email: "" });
-        }
-        
-        // IMPORTANT: Set loading to false when auth state changes
-        setLoading(false);
+        applyAuthState(session);
       }
     );
 
@@ -200,7 +184,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await getSupabase().auth.signOut();
     setProfile(null);
   };
 

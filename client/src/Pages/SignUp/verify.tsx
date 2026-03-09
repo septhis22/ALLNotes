@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, useSubmit } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { getSupabase } from '../../lib/supabase'
 import { profilesRepository } from '../../repositories'
 
 export const Verify = () => {
@@ -49,7 +49,7 @@ export const Verify = () => {
           // User has been successfully verified and we have tokens
           console.log('Tokens found in hash, setting session...');
           
-          const { data, error } = await supabase.auth.setSession({
+          const { data, error } = await getSupabase().auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
@@ -63,23 +63,22 @@ export const Verify = () => {
             setVerificationStatus('success');
             
             // Check current user
-            const { data: user } = await supabase.auth.getUser();
-            console.log('Current user after setting session:', user);
+            const { data: userData } = await getSupabase().auth.getUser();
+            console.log('Current user after setting session:', userData);
 
-            const id = user.user?.id;
+            const user = userData.user;
+            if (user) {
+              // Ensure profile row exists immediately
+              try {
+                await profilesRepository.addOrUpdateName("User");
+                console.log('Automatic profile creation successful');
+              } catch (profileErr) {
+                console.error('Failed to create initial profile:', profileErr);
+              }
+            }
             
             // Clean up URL by removing hash
             window.history.replaceState({}, document.title, window.location.pathname);
-            // try{
-            //   const response  = await axios.get("http://localhost:8080/addUser",{headers:{'Authorization':`Bearer :${token}`}});
-            // }catch{
-
-            // }
-            
-            // Auto-redirect after 3 seconds
-            // setTimeout(() => {
-            //   navigate('/dashboard'); // or wherever you want to redirect verified users
-            // }, 3000);
           }
           return;
         }
@@ -94,7 +93,7 @@ export const Verify = () => {
         if (token && type === 'signup') {
           console.log('Attempting traditional OTP verification...');
           
-          const { data, error } = await supabase.auth.verifyOtp({
+          const { data, error } = await getSupabase().auth.verifyOtp({
             token_hash: token,
             type: 'signup'
           });
@@ -155,7 +154,7 @@ export const Verify = () => {
         return;
       }
 
-      const { error } = await supabase.auth.resend({
+      const { error } = await getSupabase().auth.resend({
         type: 'signup',
         email: email
       });
@@ -184,15 +183,34 @@ export const Verify = () => {
         )}
 
         {verificationStatus === 'success' && (
-          <>
-            <div>
-              <form >
-                  <p>Enter you name here:</p><br/>
-                  <input value={name} onChange={e => setName(e.target.value)} /><br/>
-                  <button onClick={handleAddName}></button>
-              </form>
+          <div className="space-y-6">
+            <div className="text-green-500 text-5xl mb-4">✓</div>
+            <h2 className="text-xl font-semibold text-green-600">Email Verified!</h2>
+            <p className="text-gray-600">Please complete your profile to continue.</p>
+            
+            <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Enter your name:
+              </label>
+              <input 
+                type="text"
+                value={name} 
+                onChange={e => setName(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Your Name"
+              />
+              <button 
+                type="button"
+                onClick={async () => {
+                  await handleAddName();
+                  navigate('/');
+                }}
+                className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                Complete Profile
+              </button>
             </div>
-          </>
+          </div>
         )}
 
         {verificationStatus === 'error' && (

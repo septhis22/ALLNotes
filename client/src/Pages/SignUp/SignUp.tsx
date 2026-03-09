@@ -2,10 +2,10 @@ import React, { useState } from 'react'
 import Navbar from '../../component/Navbar/Navbar';
 import PasswordInput from '../../component/Input/PasswordInput';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { getSupabase } from '../../lib/supabase';
 
 export async function signUpWithEmail(email: string, password: string) {
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await getSupabase().auth.signUp({
     email,
     password,
     options: {

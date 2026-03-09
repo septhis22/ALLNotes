@@ -1,22 +1,12 @@
 import { useEffect, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../Context/AuthContext';
-import { useStore } from '../../store/store';
+import { useStore, type Note } from '../../store/store';
 import { getAllNotes, addNote } from '../../IndexDB/db';
 import { v4 as uuidv4 } from 'uuid';
 import { useVerifyUser } from '../../utils/verifyUser';
 import { syncNotes } from '../../utils/ConflictHandler';
 import { notesRepository } from '../../repositories';
-
-
-interface Notes {
-  userId: string;
-  id: string;
-  title: string;
-  content: string;
-  updatedat: string;
-  synced: boolean;
-}
 
 export const NoteList = () => {
 
@@ -92,7 +82,7 @@ export const NoteList = () => {
   const handleNewNote = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newNote: Notes = {
+    const newNote: Note = {
       userId: userId,
       id: uuidv4(),
       title: '<h2>Untitled</h2>',
@@ -104,7 +94,7 @@ export const NoteList = () => {
     try {
       // Always add the note locally first
       await addNote(newNote);
-      setNotes((prevNotes) => [...prevNotes, newNote]);
+      setNotes((prevNotes: Note[]) => [...prevNotes, newNote]);
       
       // Select the new note automatically
       setId(newNote.id);
@@ -119,17 +109,21 @@ export const NoteList = () => {
         });
 
         // Update the note as synced
-        setNotes(notes.map((note): Notes => 
-          note.id === newNote.id ? { ...note, synced: true } : note
-        ));
+        setNotes((prevNotes: Note[]) => 
+          prevNotes.map(note => 
+            note.id === newNote.id ? { ...note, synced: true } : note
+          )
+        );
       }
     } catch (err) {
       console.error('Error creating new note:', err);
       
       // If cloud sync failed, mark as unsynced
-      setNotes(notes.map((note): Notes => 
-        note.id === newNote.id ? { ...note, synced: false } : note
-      ));
+      setNotes((prevNotes: Note[]) => 
+        prevNotes.map(note => 
+          note.id === newNote.id ? { ...note, synced: false } : note
+        )
+      );
       
       // Still refresh notes from local storage
       await fetchNotes();

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import userIcon from '/user_icon.png';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { getSupabase } from '../../lib/supabase';
 import { useAuthContext } from '../../Context/AuthContext';
 import { useVerifyUser } from '../../utils/verifyUser';
 import useUpdateProfile from '../../utils/useUserUpdateProfile';
@@ -39,7 +39,7 @@ export const Navbar = () => {
     navigate('/');
   }
     const handleLogOut=async()=>{
-    const { error } = await supabase.auth.signOut();
+    const { error } = await getSupabase().auth.signOut();
     if (error) {
       console.error("Error signing out:", error);
     } else {
