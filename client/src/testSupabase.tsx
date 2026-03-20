@@ -32,7 +32,7 @@ const testSupabaseConnection = async () => {
 
     // Test 3: Try to fetch profiles table
     console.log('3. Testing profiles table access...');
-    const { data: profileData, error: profileError } = await client
+    const { error: profileError } = await client
       .from('profiles')
       .select('*')
       .limit(1);
@@ -46,7 +46,7 @@ const testSupabaseConnection = async () => {
 
     // Test 4: Try to fetch notes table
     console.log('4. Testing notes table access...');
-    const { data: notesData, error: notesError } = await client
+    const { error: notesError } = await client
       .from('notes')
       .select('*')
       .limit(1);
@@ -60,7 +60,7 @@ const testSupabaseConnection = async () => {
 
     // Test 5: Try to fetch note_collaborators table
     console.log('5. Testing note_collaborators table access...');
-    const { data: collabData, error: collabError } = await client
+    const { error: collabError } = await client
       .from('note_collaborators')
       .select('*')
       .limit(1);

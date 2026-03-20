@@ -1,5 +1,4 @@
 import { useEffect, useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../Context/AuthContext';
 import { useStore, type Note } from '../../store/store';
 import { getAllNotes, addNote } from '../../IndexDB/db';
@@ -28,7 +27,8 @@ export const NoteList = () => {
   const fetchNotes = useCallback(async () => {
     try {
       const allNotes = await getAllNotes(userId);
-      setNotes(allNotes);
+      // Back-compat: older notes may not have `type` yet
+      setNotes(allNotes.map((n) => ({ ...n, type: n.type ?? 'note' })));
     } catch (error) {
       console.error('Error fetching notes:', error);
     }
@@ -85,6 +85,7 @@ export const NoteList = () => {
     const newNote: Note = {
       userId: userId,
       id: uuidv4(),
+      type: 'note',
       title: '<h2>Untitled</h2>',
       content: '<p>Change Meee!!!!!!</p>',
       updatedat: new Date().toISOString(),
@@ -103,6 +104,7 @@ export const NoteList = () => {
       if (userId !== "Guest") {
         await notesRepository.createWithOwner({
           id: newNote.id,
+          type: newNote.type,
           title: newNote.title,
           content: newNote.content,
           updatedat: newNote.updatedat,

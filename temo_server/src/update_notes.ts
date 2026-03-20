@@ -7,7 +7,7 @@ const router = express.Router();
 
 
 router.post('/', authenticateSupabaseToken,async (req: Request, res: Response): Promise<any> => {
-  const { _userId,id, title, content, updatedAt } = req.body;
+  const { _userId,id, title, content, note_data, updatedAt } = req.body;
   const userId = req.user?.id;
 
   if (!userId) {
@@ -23,8 +23,8 @@ router.post('/', authenticateSupabaseToken,async (req: Request, res: Response): 
     return res.status(401).json({error: "Unauthorized: User ID mismatch"});
   }
 
-  if (!id || !title || !content) {
-    return res.status(400).json({ error: "Missing required fields: id, title, or content" });
+  if (!id || !title || (!content && !note_data)) {
+    return res.status(400).json({ error: "Missing required fields: id, title, or content/note_data" });
   }
 
   if(userId==="Guest" || !userId){
@@ -48,8 +48,8 @@ router.post('/', authenticateSupabaseToken,async (req: Request, res: Response): 
 
     // Update note
     const updateResult = await client.query(
-      'UPDATE notes SET content = $1, title = $2, updatedat = $3 WHERE id = $4 RETURNING *',
-      [content, title, updatedAt, id]
+      'UPDATE notes SET content = $1, title = $2, updatedat = $3, note_data = $4 WHERE id = $5 RETURNING *',
+      [content || "", title, updatedAt, note_data ? JSON.stringify(note_data) : null, id]
     );
 
     if (updateResult.rows.length > 0) {

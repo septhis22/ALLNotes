@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { NoteEditor } from "../../component/Input/TextInput";
+// import { NoteEditor } from "../../component/Input/TextInput";
+import MyEditor from "../../Editor/blockNote";
 import NoteList from "../../component/Sidebar/NoteList";
 import Navbar from "../../component/Navbar/Navbar";
 import useUpdateProfile from "../../utils/useUserUpdateProfile";
@@ -24,8 +25,8 @@ export const Home = () => {
           <NoteList />
         </aside>
 
-        <main className="flex-1 p-6 bg-white overflow:visible">
-          <NoteEditor />
+        <main className="flex-1 p-6 bg-white overflow-visible">
+          <MyEditor />
         </main>
       </div></>
     </>

@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState, useEffect, useCallback } from 'react';
+import React, { useLayoutEffect, useRef, useState, useEffect } from 'react';
 import * as Y from 'yjs';
 import { QuillBinding } from 'y-quill';
 import Quill from 'quill';
@@ -171,6 +171,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
 
         // Add event listeners for content changes
         quill.on('text-change', (delta, oldDelta, source) => {
+          void delta;
+          void oldDelta;
           console.log('Text changed, source:', source);
           logQuillContent('text-change');
         });
@@ -284,6 +286,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
     try{
       await notesRepository.updateOwned({
         id: roomName,
+        type: "note",
         title: "for now exp",
         content: content,
         updatedat: new Date().toISOString()

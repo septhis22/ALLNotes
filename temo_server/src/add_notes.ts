@@ -5,7 +5,7 @@ import { authenticateSupabaseToken } from "./middleware/supebaseAuth";
 const router = express.Router();
 
 router.post('/add_notes',authenticateSupabaseToken,async (req: Request, res: Response):Promise<void> => {
-  const { id, title, content, updated_at } = req.body;
+  const { id, title, content, note_data, updated_at } = req.body;
   const userId = req.user?.id;
 
   try {
@@ -13,8 +13,8 @@ router.post('/add_notes',authenticateSupabaseToken,async (req: Request, res: Res
     try {
       
       const response = await client.query(
-        'INSERT INTO notes(id, title, content, updatedat,owner) VALUES ($1, $2, $3, $4 ,$5) RETURNING id',
-        [id, title, content, updated_at,userId]
+        'INSERT INTO notes(id, title, content, note_data, updatedat,owner) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+        [id, title, content, note_data ? JSON.stringify(note_data) : null, updated_at,userId]
       );
       const addmember = await client.query(
         "INSERT INTO note_collaborators(note_id, user_id, permission) VALUES ($1, $2, $3) RETURNING note_id",

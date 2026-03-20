@@ -23,9 +23,9 @@ export const Profile: React.FC = () => {
     const [groupedData, setGroupedData] = useState<GroupedNoteData[]>([]);
     const [removeIds, setRemoveIds] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
+    const [, setError] = useState<string | null>(null);
     const [processingRemoval, setProcessingRemoval] = useState<boolean>(false);
-    const [noteIds, setNoteIds] = useState<CollaborationEntry[]>([]);
+    const [, setNoteIds] = useState<CollaborationEntry[]>([]);
     
     // Username change states
     const [newUsername, setNewUsername] = useState<string>('');

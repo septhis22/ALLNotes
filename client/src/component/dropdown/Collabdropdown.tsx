@@ -185,6 +185,30 @@ const Collabdropdown: React.FC<CollabdropdownProps> = ({ onClose }) => {
 };
 
 export default Collabdropdown;
-function fallbackCopyToClipboard(link: string) {
-  throw new Error("Function not implemented.");
+function fallbackCopyToClipboard(text: string) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.top = "0";
+  textarea.style.left = "0";
+  textarea.style.width = "2em";
+  textarea.style.height = "2em";
+  textarea.style.padding = "0";
+  textarea.style.border = "none";
+  textarea.style.outline = "none";
+  textarea.style.boxShadow = "none";
+  textarea.style.background = "transparent";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  try {
+    document.execCommand("copy");
+    alert("Link copied to clipboard!");
+  } catch (err) {
+    console.error("Fallback copy failed:", err);
+    alert("Failed to copy link");
+  } finally {
+    document.body.removeChild(textarea);
+  }
 }

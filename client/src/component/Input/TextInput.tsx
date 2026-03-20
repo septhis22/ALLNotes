@@ -73,8 +73,8 @@ export const NoteEditor = () => {
 
   // Debounced local save
   const saveContent = useCallback(
-    debounce((id: string, content: string, title: string) => {
-      updateNoteById(id, { title, content });
+    debounce((id: string, content: string, title: string, note_data?: any) => {
+      updateNoteById(id, { title, content, note_data });
       updateNoteSync(id, false);
     }, 200),
     []

@@ -59,3 +59,25 @@
   .ql-toolbar button.ql-active .ql-fill {
     fill: white !important;
   }
+
+  /* BlockNote overrides to take full height */
+  .bn-container[data-color-scheme] {
+    height: 100% !important;
+  }
+
+  .bn-container {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+  }
+  
+  .bn-editor {
+    min-height: 100% !important;
+    height: 100% !important;
+    flex: 1 !important;
+  }
+  
+  .ProseMirror {
+    min-height: 100% !important;
+  }

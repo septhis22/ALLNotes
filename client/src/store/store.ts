@@ -3,10 +3,12 @@ import { create } from 'zustand';
 export interface Note {
   userId: string;
   id: string;
+  type: string;
   title: string;
   content: string;
   updatedat: string;
   synced: boolean;
+  note_data?: any;
 }
 
 export interface UserDetails {

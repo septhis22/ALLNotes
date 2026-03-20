@@ -1,10 +1,9 @@
 import { useCallback } from "react";
 import { useAuthContext } from "../Context/AuthContext";
-import { profilesRepository } from "../repositories";
 import { getSupabase } from "../lib/supabase.ts";
 
 const useUpdateProfile = () => {
-    const { userD, setUserD } = useAuthContext();
+    const { setUserD } = useAuthContext();
 
     const updateProfile = useCallback(async (): Promise<any> => {
         const { data: { user } } = await getSupabase().auth.getUser();

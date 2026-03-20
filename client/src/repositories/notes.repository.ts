@@ -2,24 +2,30 @@ import { getSupabase } from '../lib/supabase.ts';
 
 export interface NoteRow {
   id: string;
+  type: string;
   title: string;
   content: string;
   updatedat: string;
   owner: string;
+  note_data?: any;
 }
 
 export interface CreateNoteInput {
   id: string;
+  type: string;
   title: string;
   content: string;
   updatedat: string;
+  note_data?: any;
 }
 
 export interface UpdateNoteInput {
   id: string;
+  type: string;
   title: string;
   content: string;
   updatedat: string;
+  note_data?: any;
 }
 
 const getCurrentUserId = async (): Promise<string> => {
@@ -62,9 +68,11 @@ export const notesRepository = {
       .insert([
         {
           id: input.id,
+          type: input.type,
           title: input.title,
           content: input.content,
           updatedat: input.updatedat,
+          note_data: input.note_data,
           owner,
         },
       ])
@@ -92,9 +100,11 @@ export const notesRepository = {
     const { data, error } = await getSupabase()
       .from('notes')
       .update({
+        type: input.type,
         title: input.title,
         content: input.content,
         updatedat: input.updatedat,
+        note_data: input.note_data,
       })
       .eq('id', input.id)
       .eq('owner', owner)

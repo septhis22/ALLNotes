@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams, useSubmit } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getSupabase } from '../../lib/supabase'
 import { profilesRepository } from '../../repositories'
 
@@ -9,7 +9,6 @@ export const Verify = () => {
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isResending, setIsResending] = useState<boolean>(false);
-  const [isAdding, setIsAdding] =  useState(true);
   const [name,setName] = useState("User");
   useEffect(() => {
     const handleVerification = async () => {

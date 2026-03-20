@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import Navbar from '../../component/Navbar/Navbar';
-import { data, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import PasswordInput from '../../component/Input/PasswordInput';
 import { getSupabase } from '../../lib/supabase';
-import { useNavigate } from 'react-router-dom';
 
 
 interface LoginInCollabProps {

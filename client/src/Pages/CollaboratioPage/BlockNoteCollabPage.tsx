@@ -1,5 +1,7 @@
 import MyEditor from '../../Editor/blockNote'
-export const Editor = () => {
+
+
+const BlockNoteCollabPage = () => {
   return (
     <div>
         <MyEditor/>
@@ -7,4 +9,4 @@ export const Editor = () => {
   )
 }
 
-export default Editor;
+export default BlockNoteCollabPage;

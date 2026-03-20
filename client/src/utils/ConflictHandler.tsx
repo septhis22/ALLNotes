@@ -57,10 +57,11 @@ export const syncNotes = async (userId: string,setIsLoading:React.Dispatch<React
   }
 
   // Add notes that exist online but not offline
-  for (const [id, onlineNote] of onlineNotesMap) {
+  for (const [, onlineNote] of onlineNotesMap) {
     const newNote: Note = {
       userId:userId,
       id: onlineNote.id,
+      type: onlineNote.type ?? "note",
       title: onlineNote.title,
       content: onlineNote.content,
       updatedat: onlineNote.updatedat,
