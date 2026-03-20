@@ -44,17 +44,17 @@ function TreeItem({ node, depth = 0, selectedId, onSelect, onButtonClick }: Tree
     return (
       <li className="relative mt-1">
         {depth > 0 && (
-          <span className="absolute -left-[11px] top-[14px] w-[11px] h-px bg-zinc-200" />
+          <span className="absolute -left-[11px] top-[14px] w-[11px] h-px bg-[#3f3f3f]" />
         )}
         <div
           onClick={() => onSelect(node.id)}
           className={`flex items-center gap-2 px-2 py-1 rounded cursor-pointer text-sm h-7 transition-colors select-none
             ${isSelected
-              ? "bg-zinc-100 text-zinc-900 font-medium"
-              : "text-zinc-900 hover:bg-zinc-100"
+              ? "bg-[#333333] text-white font-medium"
+              : "text-white hover:bg-[#333333]"
             }`}
         >
-          <File className="w-4 h-4 text-zinc-500 shrink-0" />
+          <File className="w-4 h-4 text-gray-300 shrink-0" />
           {node.name}
         </div>
       </li>
@@ -64,10 +64,10 @@ function TreeItem({ node, depth = 0, selectedId, onSelect, onButtonClick }: Tree
   return (
     <li className="relative mt-1">
       {depth > 0 && (
-        <span className="absolute -left-[11px] top-[14px] w-[11px] h-px bg-zinc-200" />
+        <span className="absolute -left-[11px] top-[14px] w-[11px] h-px bg-[#3f3f3f]" />
       )}
       <div
-        className="flex items-center justify-between group px-2 py-1 rounded text-sm h-7 text-zinc-900 hover:bg-zinc-100 transition-colors"
+        className="flex items-center justify-between group px-2 py-1 rounded text-sm h-7 text-white hover:bg-[#333333] transition-colors"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -76,8 +76,8 @@ function TreeItem({ node, depth = 0, selectedId, onSelect, onButtonClick }: Tree
           className="flex items-center gap-2 cursor-pointer select-none flex-1"
         >
           {open
-            ? <FolderOpen className="w-4 h-4 text-zinc-900 shrink-0" />
-            : <Folder className="w-4 h-4 text-zinc-500 shrink-0" />
+            ? <FolderOpen className="w-4 h-4 text-white shrink-0" />
+            : <Folder className="w-4 h-4 text-gray-300 shrink-0" />
           }
           {node.name}
         </div>
@@ -86,12 +86,12 @@ function TreeItem({ node, depth = 0, selectedId, onSelect, onButtonClick }: Tree
             e.stopPropagation();
             onButtonClick?.(node.id);
           }}
-          className={`p-1 rounded hover:bg-zinc-200 transition-colors ${
+          className={`p-1 rounded hover:bg-[#3f3f3f] transition-colors ${
             isHovered ? "opacity-100" : "opacity-0"
           }`}
           title="Add item"
         >
-          <Plus className="w-4 h-4 text-zinc-600" />
+          <Plus className="w-4 h-4 text-gray-300" />
         </button>
       </div>
 
@@ -100,7 +100,7 @@ function TreeItem({ node, depth = 0, selectedId, onSelect, onButtonClick }: Tree
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
       >
-        <ul className="overflow-hidden ml-[11px] pl-[11px] border-l border-zinc-200">
+        <ul className="overflow-hidden ml-[11px] pl-[11px] border-l border-[#3f3f3f]">
           {node.children?.map((child) => (
             <TreeItem
               key={child.id}
@@ -174,7 +174,7 @@ export default function NewSidebar() {
   );
 
   return (
-    <div className="w-80 border border-zinc-200 rounded-lg p-6 bg-white shadow-sm">
+    <div className="w-full  p-6 bg-transparent shadow-none text-white">
       <ul className="list-none p-0 m-0">
         {privateTree.map((node) => (
           <TreeItem

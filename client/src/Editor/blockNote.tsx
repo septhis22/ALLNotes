@@ -31,7 +31,6 @@ export default function MyEditor() {
       noteId={id}
       note={currentNote}
       userId={userId}
-      notes={notes}
       setNotes={setNotes}
     />
   );
@@ -41,13 +40,11 @@ function EditorInstance({
   noteId,
   note,
   userId,
-  notes,
   setNotes,
 }: {
   noteId: string;
   note: Note;
   userId: string;
-  notes: Note[];
   setNotes: any;
 }) {
   const editor = useCreateBlockNote({
@@ -74,26 +71,18 @@ function EditorInstance({
     <div className="h-full w-full" style={{ display: "flex", flexDirection: "column" }}>
       <BlockNoteView
         editor={editor}
-        style={{ height: "100%", width: "100%" }}
+        theme="dark"
+        style={{ height: "100%", width: "100%", backgroundColor: "transparent" }}
         onChange={() => {
           const updatedData = editor.document;
           
-          let updatedTitle = "Untitled Note";
-          // Try to extract title from blocknote document if possible
-          if (updatedData.length > 0 && updatedData[0].content && Array.isArray(updatedData[0].content)) {
-            const firstBlockContent = updatedData[0].content;
-            if (firstBlockContent.length > 0 && (firstBlockContent[0] as any).text) {
-              updatedTitle = (firstBlockContent[0] as any).text;
-            }
-          }
-
           // Generate string representation for the content field if needed
           const contentStr = "{}";
 
-          setNotes(notes.map((n: Note) =>
-            n.id === noteId ? { ...n, title: updatedTitle, content: contentStr, note_data: updatedData } : n
+          setNotes((prevNotes: Note[]) => prevNotes.map((n: Note) =>
+            n.id === noteId ? { ...n, content: contentStr, note_data: updatedData } : n
           ));
-          saveContent(noteId, updatedData, contentStr, updatedTitle);
+          saveContent(noteId, updatedData, contentStr, note.title);
         }}
       />
     </div>
