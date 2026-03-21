@@ -24,7 +24,7 @@ interface GlobalStore {
   allowed_storage: number;
 
   // Actions
-  setId: (id: string) => void;
+  setId: (id: string) => void
   setNotes: (notes: Note[] | ((prevNotes: Note[]) => Note[])) => void;
   setUserId: (userId: string) => void;
   setUserD: (userD: UserDetails) => void;

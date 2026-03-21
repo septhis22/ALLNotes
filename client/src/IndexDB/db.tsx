@@ -35,9 +35,10 @@ export async function addNote(note: {
   id: string;
   type: string;
   title: string;
-  content: string;
+
   updatedat: string;
   synced: boolean;
+  note_data?:any;
 }) {
   const db = await openDB();
   const tx = db.transaction("notes", "readwrite");
@@ -47,7 +48,7 @@ export async function addNote(note: {
   // Back-compat: older callers may not provide `type`
   // (and older stored notes won't have it until re-saved)
   note.type = note.type ?? "note";
-  store.add(note);
+  store.put(note);
   await new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
@@ -86,7 +87,7 @@ export async function getAllNotes(userId: string): Promise<Note[]> {
 }
 
 export async function updateNoteById(
-id: string, updatedFields: { title?: string; content?: string; note_data?: any }) {
+id: string, updatedFields: { title?: string; note_data?: any }) {
   const db = await openDB();
   const tx = db.transaction("notes", "readwrite");
   const store = tx.objectStore("notes");
@@ -104,7 +105,6 @@ id: string, updatedFields: { title?: string; content?: string; note_data?: any }
 
       // Update the fields
       if (updatedFields.title !== undefined) note.title = updatedFields.title;
-      if (updatedFields.content !== undefined) note.content = updatedFields.content;
       if (updatedFields.note_data !== undefined) note.note_data = updatedFields.note_data;
       note.updatedat = new Date().toISOString();
       note.synced = false;

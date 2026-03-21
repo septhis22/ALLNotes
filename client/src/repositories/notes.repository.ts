@@ -4,7 +4,6 @@ export interface NoteRow {
   id: string;
   type: string;
   title: string;
-  content: string;
   updatedat: string;
   owner: string;
   note_data?: any;
@@ -14,7 +13,6 @@ export interface CreateNoteInput {
   id: string;
   type: string;
   title: string;
-  content: string;
   updatedat: string;
   note_data?: any;
 }
@@ -23,7 +21,6 @@ export interface UpdateNoteInput {
   id: string;
   type: string;
   title: string;
-  content: string;
   updatedat: string;
   note_data?: any;
 }
@@ -70,7 +67,6 @@ export const notesRepository = {
           id: input.id,
           type: input.type,
           title: input.title,
-          content: input.content,
           updatedat: input.updatedat,
           note_data: input.note_data,
           owner,
@@ -102,7 +98,6 @@ export const notesRepository = {
       .update({
         type: input.type,
         title: input.title,
-        content: input.content,
         updatedat: input.updatedat,
         note_data: input.note_data,
       })

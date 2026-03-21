@@ -14,7 +14,6 @@ export const createNewNote = async (
     id: uuidv4(),
     type: type,
     title: '<h2>Untitled</h2>',
-    content: '<p>Change Meee!!!!!!</p>',
     updatedat: new Date().toISOString(),
     synced: userId !== 'Guest', // Only synced if not a guest
   };
@@ -33,7 +32,7 @@ export const createNewNote = async (
         id: newNote.id,
         type: newNote.type,
         title: newNote.title,
-        content: newNote.content,
+        note_data: newNote.note_data,
         updatedat: newNote.updatedat,
       });
 

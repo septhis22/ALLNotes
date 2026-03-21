@@ -13,7 +13,6 @@ const autoSync= async(userId:string)=>{
                       id: note.id,
                       type: note.type,
                       title: note.title,
-                      content: note.content,
                       note_data: note.note_data,
                       updatedat: note.updatedat || (note as any).updatedAt,
                     });

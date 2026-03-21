@@ -11,7 +11,7 @@ export const NoteList = () => {
 
 
 
-  const[syncLoading ,setSyncLoading] = useState(true)
+  const [, setSyncLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { userId, setUserId } = useAuthContext();
   const { id, setId, notes, setNotes } = useStore();
@@ -32,16 +32,22 @@ export const NoteList = () => {
     } catch (error) {
       console.error('Error fetching notes:', error);
     }
-  }, [setNotes, userId,syncLoading]);
+  }, [setNotes, userId]); // Removed syncLoading from dependencies
 
   useEffect(()=>{
     const Allsync=async()=>{
-      if(userId!=="Guest"){
+      console.log('Starting sync for user:', userId);
+      if(userId && userId!=="Guest"){
+       setSyncLoading(true);
        await syncNotes(userId,setSyncLoading);
+       // Fetch notes immediately after sync completes
+       fetchNotes();
       }
     }
-    Allsync();
-  },[userId,setUserId,isLoading]);
+    if (!isLoading) {
+      Allsync();
+    }
+  },[userId, isLoading, fetchNotes]);
 
   // ✅ FIXED: Proper user verification flow
   useEffect(() => {
@@ -75,6 +81,7 @@ export const NoteList = () => {
   useEffect(() => {
     if (!isLoading && userId) {
       console.log('Fetching notes for user:', userId);
+      // For disconnected/Guest users or initial local load before sync finishes
       fetchNotes();
     }
   }, [isLoading, userId, fetchNotes]); // ✅ FIXED: Better dependencies
@@ -87,7 +94,6 @@ export const NoteList = () => {
       id: uuidv4(),
       type: 'note',
       title: '<h2>Untitled</h2>',
-      content: '<p>Change Meee!!!!!!</p>',
       updatedat: new Date().toISOString(),
       synced: userId !== "Guest", // Only synced if not a guest
     };
@@ -106,7 +112,7 @@ export const NoteList = () => {
           id: newNote.id,
           type: newNote.type,
           title: newNote.title,
-          content: newNote.content,
+          note_data: newNote.note_data,
           updatedat: newNote.updatedat,
         });
 

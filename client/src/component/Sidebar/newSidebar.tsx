@@ -4,7 +4,8 @@ import { useAuthContext } from "../../Context/AuthContext";
 import { getAllNotes } from "../../IndexDB/db";
 import { useStore, type Note } from "../../store/store";
 import { createNewNote } from "../../util/createNewNote";
-
+import { syncNotes } from "../../utils/ConflictHandler";
+import { useVerifyUser } from "../../utils/verifyUser";
 
 type TreeNode = {
   id: string;
@@ -34,6 +35,7 @@ type TreeItemProps = {
 };
 
 function TreeItem({ node, depth = 0, selectedId, onSelect, onButtonClick }: TreeItemProps) {
+  
   const [open, setOpen] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const isSelected = selectedId === node.id;
@@ -117,22 +119,18 @@ function TreeItem({ node, depth = 0, selectedId, onSelect, onButtonClick }: Tree
   );
 }
 
-export default function NewSidebar() {
-  const [selectedId, setSelectedId] = useState<string | null>("button");
-  const { userId } = useAuthContext();
-  const { notes, setNotes, setId } = useStore();
 
-  const handleButtonClick = useCallback(
-    (nodeId: string) => {
-      createNewNote(
-        nodeId === "private" ? "private" : "shared",
-        userId,
-        setNotes,
-        setId
-      );
-    },
-    [userId, setNotes, setId]
-  );
+
+
+
+
+export default function NewSidebar() {
+  const verifyUser = useVerifyUser();
+  const [selectedId, setSelectedId] = useState<string | null>("button");
+  const { notes, setNotes, setId } = useStore();
+  const [, setSyncLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { userId, setUserId } = useAuthContext();
 
 
 
@@ -146,8 +144,66 @@ export default function NewSidebar() {
   }, [setNotes, userId]);
 
   useEffect(() => {
-    fetchNotes();
-  }, [fetchNotes]);
+    const initializeUser = async () => {
+      try {
+        setIsLoading(true);
+        if (userId === "Guest" || !userId) {
+          const verifiedUserId = await verifyUser();
+          if (verifiedUserId && verifiedUserId !== "Guest") {
+            console.log("User verified:", verifiedUserId);
+          } else {
+            console.log("No valid user found, staying as Guest");
+            setUserId("Guest");
+          }
+        }
+      } catch (error) {
+        console.error("Error during user verification:", error);
+        setUserId("Guest");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeUser();
+  }, [verifyUser, userId, setUserId]);
+
+  useEffect(() => {
+    if (!isLoading && userId) {
+      console.log("Fetching notes for user:", userId);
+      fetchNotes();
+    }
+  }, [isLoading, userId, fetchNotes]);
+
+  useEffect(()=>{
+    const Allsync=async()=>{
+      console.log('Starting sync for user:', userId);
+      if(userId && userId!=="Guest"){
+       setSyncLoading(true);
+       await syncNotes(userId,setSyncLoading);
+       // Fetch notes immediately after sync completes
+       fetchNotes();
+      }
+    }
+    if (!isLoading) {
+      Allsync();
+    }
+  },[userId, isLoading, fetchNotes]);
+
+
+
+  const handleButtonClick = useCallback(
+    (nodeId: string) => {
+      createNewNote(
+        nodeId === "private" ? "private" : "shared",
+        userId,
+        setNotes,
+        setId
+      );
+    },
+    [userId, setNotes, setId]
+  );
+  
+  
 
   const privateTree = useMemo<TreeNode[]>(
     () => [

@@ -141,7 +141,7 @@ function EditorInstance({
           }
 
           // Delete from Cloudinary + refund storage
-          deleteCloudinaryFile(url, fileSize);
+          deleteCloudinaryFile(url); // size looked up server-side from cloudinary_files
         }
       }
 
@@ -158,8 +158,8 @@ function EditorInstance({
   );
 
   const saveContent = useCallback(
-    debounce((id: string, data: any, contentStr: string, title: string) => {
-      updateNoteById(id, { title, content: contentStr, note_data: data });
+    debounce((id: string, data: any, title: string) => {
+      updateNoteById(id, { title, note_data: data });
       updateNoteSync(id, false);
       syncToCloud();
     }, 500),
@@ -186,7 +186,7 @@ function EditorInstance({
             )
           );
 
-          saveContent(noteId, updatedData, "{}", note.title);
+          saveContent(noteId, updatedData, note.title);
           detectAndDeleteRemovedImages(updatedData);
         }}
       />

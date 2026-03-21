@@ -73,8 +73,8 @@ export const NoteEditor = () => {
 
   // Debounced local save
   const saveContent = useCallback(
-    debounce((id: string, content: string, title: string, note_data?: any) => {
-      updateNoteById(id, { title, content, note_data });
+    debounce((id: string, note_data: string, title: string) => {
+      updateNoteById(id, { title, note_data });
       updateNoteSync(id, false);
     }, 200),
     []
@@ -86,7 +86,7 @@ export const NoteEditor = () => {
     setContent(value);
     const title = generateTitleFromContent(value ?? "");
     setNotes(notes.map((note: Note) =>
-      note.id === id ? { ...note, title, content: value ?? "" } : note
+      note.id === id ? { ...note, title, note_data: value ?? "" } : note
     ));
     saveContent(id, value ?? "", title);
   };
@@ -105,7 +105,8 @@ export const NoteEditor = () => {
 
   // Update content when id or notes change
   useEffect(() => {
-    setContent(notes.find((n) => n.id === id)?.content || "");
+    const currentNoteData = notes.find((n) => n.id === id)?.note_data;
+    setContent((typeof currentNoteData === 'string' ? currentNoteData : '') || "");
   }, [id, notes, saveContent]);
 
   // Guard: only render when id and notes are available

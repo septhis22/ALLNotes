@@ -288,7 +288,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({
         id: roomName,
         type: "note",
         title: "for now exp",
-        content: content,
+        note_data: content,
         updatedat: new Date().toISOString()
       });
     }catch{

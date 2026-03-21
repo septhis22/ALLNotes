@@ -13,10 +13,10 @@ interface CloudinaryTicket {
   timestamp: number;
   signature: string;
   params: Record<string, string | number>;
-  max_bytes: number;  // not signed — appended separately to FormData
+  max_bytes: number;          // not signed — enforced by Cloudinary server-side
+  notification_url: string;   // not signed — Cloudinary POSTs webhook here after upload
   quota: {
-    before_bytes: number;
-    after_bytes: number;
+    allowed_storage_bytes: number;
   };
 }
 
@@ -107,10 +107,14 @@ export async function uploadFileToCloudinary(
     }
   }
 
-  // max_bytes is NOT part of the signature but Cloudinary still enforces it.
-  // Must be appended AFTER all signed fields.
+  // These are NOT part of the signature — append after signed fields.
   if (ticket.max_bytes) {
     formData.append("max_bytes", String(ticket.max_bytes));
+  }
+  // notification_url tells Cloudinary where to POST the webhook after upload.
+  // This is what triggers cloudinary-webhook edge function to record real bytes.
+  if (ticket.notification_url) {
+    formData.append("notification_url", ticket.notification_url);
   }
 
   const cloudinaryRes = await fetch(ticket.upload_url, {
