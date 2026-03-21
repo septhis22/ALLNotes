@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import type { JSX, ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { getSupabase } from "../lib/supabase";
+import { useStore } from "../store/store";
 
 // ── Types ──────────────────────────────────────────────────
 export interface UserProfile {
@@ -81,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
     try {
       const { data, error } = await getSupabase()
         .from("profiles")
-        .select("email, full_name")
+        .select("email, full_name, allowed_storage")
         .eq("id", userId)
         .single();
 
@@ -89,6 +90,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
         console.warn("Profile fetch error (may not exist yet):", error.message);
         // Return null - user might not have a profile yet
         return null;
+      }
+
+      if (data?.allowed_storage !== undefined) {
+        useStore.getState().setAllowedStorage(data.allowed_storage);
       }
 
       return {
@@ -129,9 +134,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
           try {
             const { data: profileData } = await getSupabase()
               .from("profiles")
-              .select("email, full_name")
+              .select("email, full_name, allowed_storage")
               .eq("id", authUser.id)
               .single();
+
+            if (profileData?.allowed_storage !== undefined) {
+              useStore.getState().setAllowedStorage(profileData.allowed_storage);
+            }
             
             const profile = profileData ? {
               userName: profileData.full_name ?? "Guest",

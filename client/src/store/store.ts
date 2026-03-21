@@ -5,7 +5,6 @@ export interface Note {
   id: string;
   type: string;
   title: string;
-  content: string;
   updatedat: string;
   synced: boolean;
   note_data?: any;
@@ -22,12 +21,14 @@ interface GlobalStore {
   notes: Note[];
   userId: string;
   userD: UserDetails;
+  allowed_storage: number;
 
   // Actions
   setId: (id: string) => void;
   setNotes: (notes: Note[] | ((prevNotes: Note[]) => Note[])) => void;
   setUserId: (userId: string) => void;
   setUserD: (userD: UserDetails) => void;
+  setAllowedStorage: (allowed_storage: number) => void;
 }
 
 export const useStore = create<GlobalStore>((set) => ({
@@ -36,6 +37,7 @@ export const useStore = create<GlobalStore>((set) => ({
   notes: [],
   userId: 'Guest',
   userD: { userName: 'Guest', email: '' },
+  allowed_storage: 0,
 
   // Actions
   setId: (id: string) => set({ id }),
@@ -45,4 +47,5 @@ export const useStore = create<GlobalStore>((set) => ({
     })),
   setUserId: (userId: string) => set({ userId }),
   setUserD: (userD: UserDetails) => set({ userD }),
+  setAllowedStorage: (allowed_storage: number) => set({ allowed_storage }),
 }));
