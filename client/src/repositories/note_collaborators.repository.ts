@@ -6,6 +6,11 @@ export interface NoteCollaboratorRow {
   permission: string[];
 }
 
+export interface CollabResponse{
+  email: string;
+  status : boolean;
+}
+
 const getCurrentUserId = async (): Promise<string> => {
   const { data, error } = await getSupabase().auth.getUser();
   if (error || !data.user?.id) {
@@ -30,78 +35,25 @@ export const noteCollaboratorsRepository = {
     return Array.isArray(permission) ? permission : [];
   },
 
-  async addCollaboratorByEmail(noteId: string, email: string): Promise<{ note_id: string; user_id: string }> {
-    const ownerId = await getCurrentUserId();
+  async addCollaboratorByEmail(noteId: string, email: string[]) {
 
-    // 1. Verify note ownership
-    const { data: noteData, error: noteError } = await getSupabase()
-      .from('notes')
-      .select('id')
-      .eq('id', noteId)
-      .eq('owner', ownerId)
-      .maybeSingle();
-
-    if (noteError) throw noteError;
+    const {data,error} = await getSupabase().rpc('add_user_email_collab',{
+      target_email:email,
+      note_id_input:noteId
+    });
     
-    if (!noteData) {
-      throw new Error('You do not own this note');
-    }
+    if(error) throw error;
 
-    // 2. Find target user in profiles table
-    console.log(`🔍 Searching for user by email: ${email}`);
-    
-    // Diagnostic: Try to see if ANY profiles are visible
-    const { data: allVisible, error: diagError } = await getSupabase()
-      .from('profiles')
-      .select('email')
-      .limit(5);
-    
-    if (diagError) {
-      console.warn("⚠️ Diagnostic: Could not even query profiles table:", diagError.message);
-    } else {
-      console.log(`📊 Diagnostic: Found ${allVisible?.length || 0} visible profiles.`, 
-        allVisible?.length ? `Emails: ${allVisible.map(p => p.email).join(', ')}` : "None visible.");
-    }
+    const results = data as CollabResponse[];
 
-    const { data: profileData, error: profileError } = await getSupabase()
-      .from('profiles')
-      .select('id, email')
-      .ilike('email', email.trim())
-      .maybeSingle();
+    results.forEach((res) => {
+        if (res.status) {
+          console.log(`✅ ${res.email} was added!`);
+        } else {
+          console.warn(`❌ Could not add ${res.email}`);
+        }
+      });
 
-    if (profileError) {
-      console.error("❌ Profile search error:", profileError);
-      throw profileError;
-    }
-    
-    console.log("👤 Profile search result:", profileData);
-
-    const targetUserId = profileData?.id;
-    if (!targetUserId) {
-      throw new Error(`User not found with email: ${email}. Ensure they have logged in at least once.`);
-    }
-
-    // 3. Add to collaborators table
-    const { data: insertData, error: insertError } = await getSupabase()
-      .from('note_collaborators')
-      .insert([
-        {
-          note_id: noteId,
-          user_id: targetUserId,
-          permission: ['w', 'r'],
-        },
-      ])
-      .select('note_id, user_id')
-      .single();
-
-    if (insertError) {
-      if (insertError.code === '23505') { // Unique constraint violation
-        throw new Error('Collaborator already added');
-      }
-      throw insertError;
-    }
-    
-    return insertData as { note_id: string; user_id: string };
   },
 
   async getCollaboratorsForOwnedNotes(): Promise<NoteCollaboratorRow[]> {

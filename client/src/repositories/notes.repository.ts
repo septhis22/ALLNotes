@@ -2,7 +2,6 @@ import { getSupabase } from '../lib/supabase.ts';
 
 export interface NoteRow {
   id: string;
-  type: string;
   title: string;
   updatedat: string;
   owner: string;
@@ -11,7 +10,6 @@ export interface NoteRow {
 
 export interface CreateNoteInput {
   id: string;
-  type: string;
   title: string;
   updatedat: string;
   note_data?: any;
@@ -19,7 +17,6 @@ export interface CreateNoteInput {
 
 export interface UpdateNoteInput {
   id: string;
-  type: string;
   title: string;
   updatedat: string;
   note_data?: any;
@@ -65,7 +62,6 @@ export const notesRepository = {
       .insert([
         {
           id: input.id,
-          type: input.type,
           title: input.title,
           updatedat: input.updatedat,
           note_data: input.note_data,
@@ -77,17 +73,6 @@ export const notesRepository = {
 
     if (error) throw error;
 
-    const { error: collaboratorError } = await getSupabase()
-      .from('note_collaborators')
-      .insert([
-        {
-          note_id: input.id,
-          user_id: owner,
-          permission: ['w', 'r'],
-        },
-      ]);
-
-    if (collaboratorError) throw collaboratorError;
     return data as NoteRow;
   },
 
@@ -96,7 +81,6 @@ export const notesRepository = {
     const { data, error } = await getSupabase()
       .from('notes')
       .update({
-        type: input.type,
         title: input.title,
         updatedat: input.updatedat,
         note_data: input.note_data,

@@ -44,7 +44,6 @@ export const syncNotes = async (userId: string,setIsLoading:React.Dispatch<React
         const upgradedNote: Note = {
           userId: userId,
           id: onlineNote.id,
-          type: onlineNote.type ?? "note",
           title: onlineNote.title,
           note_data: onlineNote.note_data,
           updatedat: onlineNote.updatedat,
@@ -68,7 +67,6 @@ export const syncNotes = async (userId: string,setIsLoading:React.Dispatch<React
     const newNote: Note = {
       userId:userId,
       id: onlineNote.id,
-      type: onlineNote.type ?? "note",
       title: onlineNote.title,
       note_data: onlineNote.note_data,
       updatedat: onlineNote.updatedat,

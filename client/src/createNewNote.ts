@@ -1,10 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Note } from '../store/store';
-import { notesRepository } from '../repositories';
-import { addNote } from '../IndexDB/db';
+import type { Note } from './store/store';
+import { notesRepository } from './repositories';
+import { addNote } from './IndexDB/db';
 
 export const createNewNote = async (
-  type: string,
   userId: string,
   setNotes: (updater: (prevNotes: Note[]) => Note[]) => void,
   setId: (id: string) => void
@@ -12,7 +11,6 @@ export const createNewNote = async (
   const newNote: Note = {
     userId: userId,
     id: uuidv4(),
-    type: type,
     title: '<h2>Untitled</h2>',
     updatedat: new Date().toISOString(),
     synced: userId !== 'Guest', // Only synced if not a guest
@@ -30,7 +28,6 @@ export const createNewNote = async (
     if (userId !== 'Guest') {
       await notesRepository.createWithOwner({
         id: newNote.id,
-        type: newNote.type,
         title: newNote.title,
         note_data: newNote.note_data,
         updatedat: newNote.updatedat,
@@ -53,4 +50,5 @@ export const createNewNote = async (
       )
     );
   }
+  return newNote.id;
 };

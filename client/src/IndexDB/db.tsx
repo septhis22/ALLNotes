@@ -33,7 +33,6 @@ function openDB(): Promise<IDBDatabase> {
 export async function addNote(note: {
   userId: string;
   id: string;
-  type: string;
   title: string;
 
   updatedat: string;
@@ -45,9 +44,6 @@ export async function addNote(note: {
   const store = tx.objectStore("notes");
   // Always ensure synced is boolean
   note.synced = !!note.synced;
-  // Back-compat: older callers may not provide `type`
-  // (and older stored notes won't have it until re-saved)
-  note.type = note.type ?? "note";
   store.put(note);
   await new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
@@ -66,7 +62,10 @@ export async function getAllNotes(userId: string): Promise<Note[]> {
      return new Promise<Note[]>((resolve, reject) => {
        const request = index.getAll(userId);
        request.onsuccess = () =>
-         resolve((request.result as any[]).map((n) => ({ ...n, type: n.type ?? "note" })) as Note[]);
+         resolve((request.result as any[]).map((n) => {
+           const { type, ...rest } = n;
+           return rest;
+         }) as Note[]);
        request.onerror = () => reject("Failed to fetch notes");
      });
    } else {
@@ -78,7 +77,10 @@ export async function getAllNotes(userId: string): Promise<Note[]> {
          resolve(
            allNotes
              .filter((note: any) => note.userId === userId)
-             .map((n: any) => ({ ...n, type: n.type ?? "note" })) as Note[]
+             .map((n: any) => {
+               const { type, ...rest } = n;
+               return rest;
+             }) as Note[]
          );
        };
        request.onerror = () => reject("Failed to fetch notes");
@@ -157,7 +159,7 @@ export async function getUnsyncedNotes(userId: string): Promise<Note[]> {
       return await new Promise((resolve, reject) => {
         const request = index.getAll(keyRange);
         request.onsuccess = () =>
-          resolve((request.result as any[]).map((n) => ({ ...n, type: n.type ?? "note" })) as Note[]);
+          resolve(request.result as Note[]);
         request.onerror = () => reject("Failed to fetch unsynced notes");
       });
     } catch (e) {
@@ -168,8 +170,7 @@ export async function getUnsyncedNotes(userId: string): Promise<Note[]> {
         req.onerror = () => reject("Failed to fetch notes");
       });
       return allNotes
-        .filter((note) => note.synced === false && note.userId === userId)
-        .map((n) => ({ ...n, type: (n as any).type ?? "note" })) as Note[];
+        .filter((note) => note.synced === false && note.userId === userId) as Note[];
     }
   } else {
     // Fallback: get all and filter
@@ -179,8 +180,7 @@ export async function getUnsyncedNotes(userId: string): Promise<Note[]> {
       req.onerror = () => reject("Failed to fetch notes");
     });
     return allNotes
-      .filter((note) => note.synced === false)
-      .map((n) => ({ ...n, type: (n as any).type ?? "note" })) as Note[];
+      .filter((note) => note.synced === false) as Note[];
   }
 }
 

@@ -11,7 +11,6 @@ const autoSync= async(userId:string)=>{
                     console.log(note);
                     const res = await notesRepository.updateOwned({
                       id: note.id,
-                      type: note.type,
                       title: note.title,
                       note_data: note.note_data,
                       updatedat: note.updatedat || (note as any).updatedAt,

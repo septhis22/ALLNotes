@@ -58,4 +58,19 @@ export const profilesRepository = {
     if (error) throw error;
     return (data as ProfileRow | null) ?? null;
   },
+
+
+  async checkProfileStatus (email:string) : Promise<Boolean |  null> {
+    
+    const {data,error} = await getSupabase().rpc('get_profile_status',{
+      email_input: email
+    });
+
+    if(error){
+      console.error('error fectching status');
+      return false;
+    }
+
+    return data;
+  }
 };

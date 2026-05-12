@@ -1,11 +1,14 @@
 import { File, Folder, FolderOpen, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuthContext } from "../../Context/AuthContext";
+import { InputTheTitle } from "../Input/inputTheTitle";
 import { getAllNotes } from "../../IndexDB/db";
 import { useStore, type Note } from "../../store/store";
-import { createNewNote } from "../../util/createNewNote";
+import { createNewNote } from "../../createNewNote";
 import { syncNotes } from "../../utils/ConflictHandler";
 import { useVerifyUser } from "../../utils/verifyUser";
+import { SharedNotesRepository } from "../../repositories/shared_notes.repositories";
+
 
 type TreeNode = {
   id: string;
@@ -14,12 +17,29 @@ type TreeNode = {
   children?: TreeNode[];
 };
 
+const fetchSharedNote = async (userId: string, setSharedNotes: any) => {
+  try {
+    const ownedSharedNotes = await SharedNotesRepository.fetchSharedNotes(userId);
+    const collabNotes = await SharedNotesRepository.fetchCollaboratorNotes(userId);
+    
+    const allSharedNotes = [...ownedSharedNotes, ...collabNotes].map(note => ({
+      id: note.id,
+      owner: note.owner_id,
+      title: note.title,
+      updatedat: note.updated_at,
+      content: note.content,
+      createdat: note.created_at
+    }));
+    
+    setSharedNotes(allSharedNotes);
+  } catch (error) {
+    console.error("Error fetching shared notes:", error);
+  }
+};
 
 
-
-const notesToFiles = (notes: Note[], noteType: string): TreeNode[] =>
+const notesToFiles = (notes: Note[]): TreeNode[] =>
   notes
-    .filter((note) => (note.type ?? "note") === noteType)
     .map((note) => ({
       id: note.id,
       name: note.title,
@@ -127,21 +147,26 @@ function TreeItem({ node, depth = 0, selectedId, onSelect, onButtonClick }: Tree
 export default function NewSidebar() {
   const verifyUser = useVerifyUser();
   const [selectedId, setSelectedId] = useState<string | null>("button");
-  const { notes, setNotes, setId } = useStore();
+  const { notes, setNotes, setId, sharedNotes, setSharedNotes } = useStore();
   const [, setSyncLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { userId, setUserId } = useAuthContext();
 
-
+  const [showTitleInput, setShowTitleInput] = useState(false);
+  const [pendingNodeId, setPendingNodeId] = useState<string | null>(null);
 
   const fetchNotes = useCallback(async () => {
     try {
       const allNotes = await getAllNotes(userId);
-      setNotes(allNotes.map((n) => ({ ...n, type: n.type ?? "note" })));
+      setNotes(allNotes.map((n) => ({ ...n })));
+      // also fetch shared notes
+      if (userId && userId !== "Guest") {
+        await fetchSharedNote(userId, setSharedNotes);
+      }
     } catch (error) {
       console.error("Error fetching notes:", error);
     }
-  }, [setNotes, userId]);
+  }, [setNotes, userId, setSharedNotes]);
 
   useEffect(() => {
     const initializeUser = async () => {
@@ -192,16 +217,46 @@ export default function NewSidebar() {
 
 
   const handleButtonClick = useCallback(
-    (nodeId: string) => {
-      createNewNote(
-        nodeId === "private" ? "private" : "shared",
-        userId,
-        setNotes,
-        setId
-      );
+    (nodeId?: string) => {
+      if (nodeId === "shared") {
+        setPendingNodeId(nodeId);
+        setShowTitleInput(true);
+      } else {
+        createNewNote(userId, setNotes, setId);
+      }
     },
     [userId, setNotes, setId]
   );
+  
+  const handleTitleSubmit = async (title: string) => {
+    setShowTitleInput(false);
+    
+    if (pendingNodeId === "shared") {
+      try {
+        const newNote = await SharedNotesRepository.createNewSharedNote(userId, title);
+        if (newNote) {
+          const sharedNoteObj = {
+            id: newNote.id,
+            owner: newNote.owner_id,
+            title: newNote.title,
+            updatedat: newNote.updated_at,
+            content: newNote.content,
+            createdat: newNote.created_at
+          };
+          setSharedNotes((prev: any) => [...prev, sharedNoteObj]);
+          // setId(newNote.id); // Disabled until shared notes editor is ready
+        }
+      } catch (error) {
+        console.error("Error creating shared note:", error);
+      }
+    }
+    setPendingNodeId(null);
+  };
+  
+  const handleTitleClose = () => {
+    setShowTitleInput(false);
+    setPendingNodeId(null);
+  };
   
   
 
@@ -209,28 +264,26 @@ export default function NewSidebar() {
     () => [
       {
         id: "private",
-        name: "Private Files",
+        name: "Private Notes",
         type: "folder",
-        children: notesToFiles(notes, "private"),
+        children: notesToFiles(notes),
       },
-    ],
-    [notes]
-  );
-
-  const sharedTree = useMemo<TreeNode[]>(
-    () => [
       {
         id: "shared",
-        name: "Shared",
+        name: "Shared Notes",
         type: "folder",
-        children: notesToFiles(notes, "shared"),
+        children: sharedNotes.map(note => ({
+          id: note.id,
+          name: note.title,
+          type: "file" as const,
+        })),
       },
     ],
-    [notes]
+    [notes, sharedNotes]
   );
 
   return (
-    <div className="w-full  p-6 bg-transparent shadow-none text-white">
+    <div className="w-full relative p-6 bg-transparent shadow-none text-white overflow-visible">
       <ul className="list-none p-0 m-0">
         {privateTree.map((node) => (
           <TreeItem
@@ -241,31 +294,24 @@ export default function NewSidebar() {
             onSelect={(id) => {
               setSelectedId(id);
               if (id !== "private" && id !== "shared") {
-                setId(id);
+                const isShared = sharedNotes.some((n) => n.id === id);
+                if (!isShared) {
+                  setId(id);
+                } else {
+                  window.open(`/shared?id=${id}`, "_blank");
+                }
               }
             }}
             onButtonClick={handleButtonClick}
           />
         ))}
       </ul>
-      <></>
-      <ul className="list-none p-0 m-0">
-        {sharedTree.map((node) => (
-          <TreeItem
-            key={node.id}
-            node={node}
-            depth={0}
-            selectedId={selectedId}
-            onSelect={(id) => {
-              setSelectedId(id);
-              if (id !== "private" && id !== "shared") {
-                setId(id);
-              }
-            }}
-            onButtonClick={handleButtonClick}
-          />
-        ))}
-      </ul>
+
+      {showTitleInput && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+           <InputTheTitle onSubmit={handleTitleSubmit} onClose={handleTitleClose} />
+        </div>
+      )}
     </div>
   );
 }

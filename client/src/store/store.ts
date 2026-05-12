@@ -3,11 +3,19 @@ import { create } from 'zustand';
 export interface Note {
   userId: string;
   id: string;
-  type: string;
   title: string;
   updatedat: string;
   synced: boolean;
   note_data?: any;
+}
+
+export interface sharedNote{
+  id:string;
+  owner:string;
+  title:string;
+  updatedat:string;
+  content?:any;
+  createdat:string;
 }
 
 export interface UserDetails {
@@ -22,6 +30,7 @@ interface GlobalStore {
   userId: string;
   userD: UserDetails;
   allowed_storage: number;
+  sharedNotes: sharedNote[];
 
   // Actions
   setId: (id: string) => void
@@ -29,6 +38,7 @@ interface GlobalStore {
   setUserId: (userId: string) => void;
   setUserD: (userD: UserDetails) => void;
   setAllowedStorage: (allowed_storage: number) => void;
+  setSharedNotes: (sharedNotes: sharedNote[] | ((prevSharedNotes: sharedNote[]) => sharedNote[])) => void;
 }
 
 export const useStore = create<GlobalStore>((set) => ({
@@ -38,7 +48,7 @@ export const useStore = create<GlobalStore>((set) => ({
   userId: 'Guest',
   userD: { userName: 'Guest', email: '' },
   allowed_storage: 0,
-
+  sharedNotes: [],
   // Actions
   setId: (id: string) => set({ id }),
   setNotes: (notesOrFn: Note[] | ((prevNotes: Note[]) => Note[])) => 
@@ -48,4 +58,8 @@ export const useStore = create<GlobalStore>((set) => ({
   setUserId: (userId: string) => set({ userId }),
   setUserD: (userD: UserDetails) => set({ userD }),
   setAllowedStorage: (allowed_storage: number) => set({ allowed_storage }),
+  setSharedNotes:(sharedNotesOrFn: sharedNote[] | ((prevSharedNotes: sharedNote[]) => sharedNote[])) =>
+    set((state) => ({ 
+      sharedNotes: typeof sharedNotesOrFn === 'function' ? sharedNotesOrFn(state.sharedNotes) : sharedNotesOrFn 
+    })),
 }));

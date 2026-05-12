@@ -79,9 +79,9 @@ const Collabdropdown: React.FC<CollabdropdownProps> = ({ onClose }) => {
     setIsLoading(true);
     
     try {
-      const response = await noteCollaboratorsRepository.addCollaboratorByEmail(id, email);
+      await noteCollaboratorsRepository.addCollaboratorByEmail(id, [email]);
       
-      if (response) {
+      if (true) {
         if (email && !verifiedEmail.includes(email)) {
           setVerifiedEmail(prev => [...prev, email]);
         }

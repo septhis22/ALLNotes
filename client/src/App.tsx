@@ -18,7 +18,7 @@ const routes = (
         <Route path='/login' element={<Login />} />
         <Route path='/signup' element={<SignUp />} />
         <Route path='/test' element={<Testpage />} />
-        
+        <Route path='/shared' element ={<CollaborationPage/>} />
         <Route path='/' element={<ProtectedRoute redirectTo='/login'><Home /></ProtectedRoute>} />
         <Route path='/verify' element={<ProtectedRoute redirectTo='/login'><Verify /></ProtectedRoute>} />
         <Route path='/collab' element={<ProtectedRoute redirectTo='/login'><CollaborationPage /></ProtectedRoute>} />
