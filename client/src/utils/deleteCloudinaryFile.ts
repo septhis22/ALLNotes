@@ -14,7 +14,6 @@ export async function deleteCloudinaryFile(url: string): Promise<void> {
   try {
     const supabase = getSupabase();
 
-    await supabase.auth.getUser(); // force token refresh
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
@@ -47,6 +46,6 @@ export async function deleteCloudinaryFile(url: string): Promise<void> {
       );
     }
   } catch (err) {
-    console.warn("[cloudinary-delete] Error:", err);
+    console.warn("[cloudinary-delete] Error:", err);1
   }
 }

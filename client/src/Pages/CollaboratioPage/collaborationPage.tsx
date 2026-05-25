@@ -12,6 +12,7 @@ const CollaborationPage = () => {
 
   const [token, setToken] = useState<string | null>(null);
   const [tokenLoaded, setTokenLoaded] = useState(false);
+  const [activeUsersCount, setActiveUsersCount] = useState(1);
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -34,7 +35,7 @@ const CollaborationPage = () => {
     <div className="flex h-screen w-screen bg-[#191919] text-gray-200 overflow-hidden">
       <aside className="h-full w-[280px] shrink-0 overflow-y-auto overflow-x-hidden bg-[#202020] border-r border-[#2d2d2d] sm:w-[320px]">
         <div className="h-full py-4 pr-2 pl-2">
-          <CollabSidebar/>
+          <CollabSidebar noteId={roomId} activeUsersCount={activeUsersCount} />
         </div>
       </aside>
 
@@ -42,7 +43,12 @@ const CollaborationPage = () => {
         {/* <Navbar /> */}
         <main className="flex-1 overflow-hidden relative">
           {tokenLoaded ? (
-            <CollaborativeEditor room={roomId} serverUrl={wsUrl} token={token || undefined} />
+            <CollaborativeEditor 
+              room={roomId} 
+              serverUrl={wsUrl} 
+              token={token || undefined} 
+              onAwarenessChange={(count) => setActiveUsersCount(count)}
+            />
           ) : (
             <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5 }}>
               Loading session...

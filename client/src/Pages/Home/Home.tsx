@@ -1,6 +1,5 @@
 import NewSidebar from '../../component/Sidebar/newSidebar';
 import MyEditor from '../../Editor/blockNote';
-import Navbar from '../../component/Navbar/Navbar';
 
 const Testpage = () => {
   return (
@@ -12,7 +11,6 @@ const Testpage = () => {
       </aside>
 
       <div className="flex flex-col flex-1 overflow-hidden bg-[#191919]">
-        <Navbar />
         <main className="flex-1 overflow-hidden relative">
            <MyEditor/>
         </main>

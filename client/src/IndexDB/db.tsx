@@ -186,6 +186,18 @@ export async function getUnsyncedNotes(userId: string): Promise<Note[]> {
 
 
 
+export async function deleteNoteById(id: string): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction("notes", "readwrite");
+  const store = tx.objectStore("notes");
+  store.delete(id);
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
 export async function deleteAllUserNotes(userId:string): Promise<any>{
   const db = await openDB();
   const tx = db.transaction("notes","readwrite");

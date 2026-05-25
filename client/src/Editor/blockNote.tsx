@@ -17,14 +17,44 @@ import type { Note } from "../store/store";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
+ * Extracts up to the specified number of words from the BlockNote blocks
+ * to generate an automatic title.
+ */
+function extractTitleFromBlocks(blocks: any[], maxWords: number = 5): string {
+  let text = "";
+  for (const block of blocks) {
+    if (block.content) {
+      if (Array.isArray(block.content)) {
+        for (const inline of block.content) {
+          if (inline.type === "text" && inline.text) {
+            text += inline.text + " ";
+          }
+        }
+      } else if (typeof block.content === "string") {
+        text += block.content + " ";
+      }
+    }
+    
+    // Stop early if we have enough words
+    const currentWords = text.trim().split(/\s+/).filter(Boolean);
+    if (currentWords.length >= maxWords) {
+      return currentWords.slice(0, maxWords).join(" ");
+    }
+  }
+
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "Untitled Note";
+  return words.slice(0, maxWords).join(" ");
+}
+
+/**
  * Recursively walks BlockNote blocks and returns a Set of all
- * Cloudinary image URLs present in the document.
+ * Cloudinary image/video/file URLs present in the document.
  */
 function extractCloudinaryUrls(blocks: any[]): Set<string> {
   const urls = new Set<string>();
   for (const block of blocks) {
     if (
-      block.type === "image" &&
       block.props?.url &&
       typeof block.props.url === "string" &&
       block.props.url.includes("res.cloudinary.com")
@@ -97,6 +127,7 @@ function EditorInstance({
       try {
         const url = await uploadFileToCloudinary(file, {
           folder: `user_${userId}/notes`,
+          noteId: noteId,
         });
 
         // ── Store the real file size against this URL ──────────────────────
@@ -113,7 +144,7 @@ function EditorInstance({
     },
   });
 
-  // ── Image deletion detector ─────────────────────────────────────────────────
+  // ── Media deletion detector ─────────────────────────────────────────────────
   const detectAndDeleteRemovedImages = useCallback(
     debounce((currentBlocks: any[]) => {
       const currentUrls = extractCloudinaryUrls(currentBlocks);
@@ -121,21 +152,21 @@ function EditorInstance({
 
       for (const url of previousUrls) {
         if (!currentUrls.has(url)) {
-          // URL disappeared from the document → user deleted the image
+          // URL disappeared from the document → user deleted the media
 
           // Look up the file size from our persistent sizeMap
           const fileSize = sizeMap.current.get(url) ?? 0;
 
           console.log(
-            "[image-delete] Detected removal:",
+            "[media-delete] Detected removal:",
             url,
             "| file_size from sizeMap:", fileSize
           );
 
           if (fileSize === 0) {
             console.warn(
-              "[image-delete] WARNING: file_size is 0 — refund will be skipped by edge function.",
-              "This means the image was not uploaded in this session.",
+              "[media-delete] WARNING: file_size is 0 — refund will be skipped by edge function.",
+              "This means the media was not uploaded in this session.",
               "Consider storing file sizes in your DB alongside the URL."
             );
           }
@@ -167,29 +198,29 @@ function EditorInstance({
   );
 
   return (
-    <div
-      className="h-full w-full overflow-y-auto overflow-x-hidden relative"
-      style={{ display: "flex", flexDirection: "column" }}
-    >
-      <BlockNoteView
-        editor={editor}
-        theme="dark"
-        style={{ minHeight: "100%", width: "100%", backgroundColor: "transparent" }}
-        onChange={() => {
-          const updatedData = editor.document;
+    <div className="h-full w-full overflow-y-auto overflow-x-hidden relative flex flex-col items-center bg-[#191919]">
+      <div className="w-full max-w-[900px] mx-auto pt-15 pb-20 px-6 flex-1">
+        <BlockNoteView
+          editor={editor}
+          theme="dark"
+          className="min-h-full w-full bg-transparent"
+          onChange={() => {
+            const updatedData = editor.document;
+            const newTitle = extractTitleFromBlocks(updatedData, 5);
 
-          setNotes((prev: Note[]) =>
-            prev.map((n: Note) =>
-              n.id === noteId
-                ? { ...n, content: "{}", note_data: updatedData }
-                : n
-            )
-          );
+            setNotes((prev: Note[]) =>
+              prev.map((n: Note) =>
+                n.id === noteId
+                  ? { ...n, content: "{}", note_data: updatedData, title: newTitle }
+                  : n
+              )
+            );
 
-          saveContent(noteId, updatedData, note.title);
-          detectAndDeleteRemovedImages(updatedData);
-        }}
-      />
+            saveContent(noteId, updatedData, newTitle);
+            detectAndDeleteRemovedImages(updatedData);
+          }}
+        />
+      </div>
     </div>
   );
 }

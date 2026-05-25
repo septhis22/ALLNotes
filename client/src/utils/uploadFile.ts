@@ -5,6 +5,7 @@ import { getSupabase } from "../lib/supabase";
 interface UploadOptions {
   folder?: string;
   public_id?: string;
+  noteId?: string;
 }
 
 interface CloudinaryTicket {
@@ -38,6 +39,7 @@ export async function uploadFileToCloudinary(
   if (userError || !userData?.user) {
     throw new Error("You must be logged in to upload files.");
   }
+  const userId = userData.user.id;
 
   // After getUser() the session is guaranteed to be fresh
   const {
@@ -62,6 +64,7 @@ export async function uploadFileToCloudinary(
         file_size: file.size,
         folder: options?.folder,
         public_id: options?.public_id,
+        note_id: options?.noteId,
       }),
     });
 
@@ -108,6 +111,9 @@ export async function uploadFileToCloudinary(
   }
 
   // These are NOT part of the signature — append after signed fields.
+  const tags = options?.noteId ? `user_${userId},note_${options.noteId}` : `user_${userId}`;
+  formData.append("tags", tags);
+
   if (ticket.max_bytes) {
     formData.append("max_bytes", String(ticket.max_bytes));
   }

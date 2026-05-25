@@ -11,8 +11,15 @@ export const createNewNote = async (
   const newNote: Note = {
     userId: userId,
     id: uuidv4(),
-    title: '<h2>Untitled</h2>',
+    title: 'Untitled Note',
     updatedat: new Date().toISOString(),
+    note_data: [
+      {
+        type: "heading",
+        props: { level: 1 },
+        content: "Untitled"
+      }
+    ],
     synced: userId !== 'Guest', // Only synced if not a guest
   };
 

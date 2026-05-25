@@ -38,7 +38,7 @@ export const noteCollaboratorsRepository = {
   async addCollaboratorByEmail(noteId: string, email: string[]) {
 
     const {data,error} = await getSupabase().rpc('add_user_email_collab',{
-      target_email:email,
+      target_emails:email,
       note_id_input:noteId
     });
     

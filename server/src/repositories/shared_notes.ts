@@ -26,7 +26,7 @@ export const sharedNoteRepository = {
         return (data ?? [])as NoteRow[] ;
     },
 
-    async updateNotedata(noteId:string, note_data:string): Promise<void> {
+    async updateNotedata(noteId:string, note_data:any): Promise<void> {
         const {data,error} = await getSupabase()
         .from('shared_notes')
         .update({

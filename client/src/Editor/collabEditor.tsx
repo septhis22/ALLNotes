@@ -42,6 +42,8 @@ import '@blocknote/mantine/style.css';
 
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
+import { uploadSharedImage } from '../utils/collabUtils/sharedImageUpload';
+import { deleteSharedImage } from '../utils/collabUtils/sharedImageDelete';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,7 +52,8 @@ export type ConnectionStatus =
   | 'connecting'
   | 'connected'
   | 'disconnected'
-  | 'error';
+  | 'error'
+  | 'auth-failed';
 
 export interface CollaborativeEditorProps {
   serverUrl?: string;
@@ -62,6 +65,7 @@ export interface CollaborativeEditorProps {
   className?: string;
   onStatusChange?: (status: ConnectionStatus) => void;
   onDocUpdate?: (update: Uint8Array) => void;
+  onAwarenessChange?: (count: number) => void;
   style?: CSSProperties;
   showStatus?: boolean;
   theme?: 'light' | 'dark';
@@ -78,12 +82,33 @@ function randomColor(): string {
   return RANDOM_COLORS[Math.floor(Math.random() * RANDOM_COLORS.length)];
 }
 
+function extractCloudinaryUrls(blocks: any[]): Set<string> {
+  const urls = new Set<string>();
+  for (const block of blocks) {
+    if (
+      block.type === "image" &&
+      block.props?.url &&
+      typeof block.props.url === "string" &&
+      block.props.url.includes("res.cloudinary.com")
+    ) {
+      urls.add(block.props.url);
+    }
+    if (block.children?.length) {
+      for (const url of extractCloudinaryUrls(block.children)) {
+        urls.add(url);
+      }
+    }
+  }
+  return urls;
+}
+
 const STATUS_STYLES: Record<ConnectionStatus, { dot: string; label: string; bg: string }> = {
   idle:         { dot: '#94a3b8', label: 'offline',      bg: 'rgba(148,163,184,0.1)' },
   connecting:   { dot: '#f59e0b', label: 'connecting…',  bg: 'rgba(245,158,11,0.1)'  },
   connected:    { dot: '#10b981', label: 'live',         bg: 'rgba(16,185,129,0.1)'  },
   disconnected: { dot: '#94a3b8', label: 'disconnected', bg: 'rgba(148,163,184,0.1)' },
   error:        { dot: '#ef4444', label: 'error',        bg: 'rgba(239,68,68,0.1)'   },
+  'auth-failed':{ dot: '#ef4444', label: 'auth failed',  bg: 'rgba(239,68,68,0.15)' },
 };
 
 // ─── StatusBadge ─────────────────────────────────────────────────────────────
@@ -179,6 +204,7 @@ function EditorUI({
   className = '',
   onStatusChange,
   onDocUpdate,
+  onAwarenessChange,
   style,
   showStatus = true,
   theme = 'light',
@@ -186,6 +212,13 @@ function EditorUI({
 }: EditorUIProps) {
   const [status, setStatus] = useState<ConnectionStatus>(yjsEnv ? 'connecting' : 'idle');
   const [isSynced, setIsSynced] = useState(false);
+
+  // Track only images uploaded by THIS client for Cloudinary deletion.
+  // Remote clients don't need to clean up — only the uploader does.
+  const localUploadsRef = useRef<Set<string>>(new Set());
+  // Snapshot of ALL Cloudinary URLs currently in the document (local + remote).
+  // Initialised lazily after first sync so we don't miss pre-existing images.
+  const knownUrlsRef = useRef<Set<string> | null>(null);
 
   const setStatusWithCallback = useCallback(
     (s: ConnectionStatus) => {
@@ -211,22 +244,44 @@ function EditorUI({
     const handleError = () => setStatusWithCallback('error');
     const handleUpdate = (update: Uint8Array) => onDocUpdate?.(update);
 
+    const handleAwarenessChange = () => {
+      onAwarenessChange?.(provider.awareness.getStates().size);
+    };
+
     provider.on('status', handleStatus);
     provider.on('sync', handleSync);
     provider.on('connection-error', handleError);
     doc.on('update', handleUpdate);
+    provider.awareness.on('change', handleAwarenessChange);
+
+    // ── Stop reconnecting on auth rejection ────────────────────────────
+    // y-websocket always reschedules reconnection on close. When the server
+    // closes the socket with code 1008 (Policy Violation) it means auth failed
+    // and we must not retry — otherwise the client spins in an infinite
+    // connect → reject → reconnect loop.
+    const handleConnectionClose = (event: CloseEvent | null) => {
+      if (event && event.code === 1008) {
+        console.warn('[CollabEditor] Auth rejected by server — stopping reconnection.');
+        provider.disconnect();   // sets shouldConnect = false, cancels retry
+        setStatusWithCallback('auth-failed');
+      }
+    };
+    provider.on('connection-close', handleConnectionClose);
 
     // Initial state checks
     if (provider.wsconnected) setStatusWithCallback('connected');
     if (provider.synced) setIsSynced(true);
+    handleAwarenessChange();
 
     return () => {
       provider.off('status', handleStatus);
       provider.off('sync', handleSync);
       provider.off('connection-error', handleError);
+      provider.off('connection-close', handleConnectionClose);
       doc.off('update', handleUpdate);
+      provider.awareness.off('change', handleAwarenessChange);
     };
-  }, [yjsEnv, setStatusWithCallback, onDocUpdate]);
+  }, [yjsEnv, setStatusWithCallback, onDocUpdate, onAwarenessChange]);
 
   const editor = useCreateBlockNote({
     ...(yjsEnv
@@ -237,31 +292,71 @@ function EditorUI({
             user: yjsEnv.userConfig,
           },
         }
-      : {}), 
+      : {}),
+    uploadFile: async (file: File) => {
+      try {
+        const url = await uploadSharedImage(file, room);
+        localUploadsRef.current.add(url);
+        console.log('[CollabEditor] uploadFile resolved URL:', url);
+        return url;
+      } catch (error) {
+        console.error('Image upload failed:', error);
+        throw error;
+      }
+    },
   });
+
+  // ── Image deletion detector ─────────────────────────────────────────────────
+  // Only deletes from Cloudinary if the image was uploaded by THIS client.
+  // This avoids double-deletion across collaborators.
+  const handleDocChange = useCallback(() => {
+    if (!editor) return;
+    const currentUrls = extractCloudinaryUrls(editor.document);
+
+    // First call: just snapshot whatever is already in the doc (pre-existing
+    // images from persistence / other clients). Don't treat them as deletions.
+    if (knownUrlsRef.current === null) {
+      knownUrlsRef.current = currentUrls;
+      return;
+    }
+
+    // Detect URLs that disappeared since the last snapshot
+    for (const url of knownUrlsRef.current) {
+      if (!currentUrls.has(url) && localUploadsRef.current.has(url)) {
+        console.log('[image-delete] Detected removal:', url);
+        deleteSharedImage(url, room);
+        localUploadsRef.current.delete(url);
+      }
+    }
+
+    knownUrlsRef.current = currentUrls;
+  }, [editor]);
 
   return (
     <div
-      className={`ce-wrapper ${className}`}
+      className={`ce-wrapper ${className} ${theme === 'dark' ? 'bg-[#191919]' : 'bg-white'}`}
       data-theme={theme}
-      style={{
-        ...style,
-        background: theme === 'dark' ? '#0f172a' : '#ffffff',
-      }}
+      style={style}
     >
       {showStatus && serverUrl && (
         <div className="ce-toolbar">
           <StatusBadge status={status} room={room} />
         </div>
       )}
-      <div className="ce-editor-area">
-        {isSynced || !serverUrl ? (
-          <BlockNoteView editor={editor} theme={theme} />
-        ) : (
-          <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5 }}>
-            Synchronizing document...
-          </div>
-        )}
+      <div className="ce-editor-area flex justify-center">
+        <div className="w-full max-w-[900px] mx-auto pt-15 pb-20 px-6">
+          {isSynced || !serverUrl ? (
+            <BlockNoteView
+              editor={editor}
+              theme={theme}
+              onChange={handleDocChange}
+            />
+          ) : (
+            <div className="p-8 text-center opacity-50">
+              Synchronizing document...
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
