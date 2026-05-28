@@ -5,7 +5,7 @@ interface DeleteNoteParams {
   note_type: "private" | "shared";
 }
 
-const DELETE_NOTE_FUNCTION_URL = "https://aybmxfhcfyulttbvhive.supabase.co/functions/v1/delete-note";
+const DELETE_NOTE_FUNCTION_URL = `${import.meta.env.VITE_supabaseurl}/functions/v1/delete-note`;
 
 export async function deleteNoteCloud(params: DeleteNoteParams): Promise<void> {
   const supabase = getSupabase();
@@ -28,7 +28,6 @@ export async function deleteNoteCloud(params: DeleteNoteParams): Promise<void> {
   const rawBody = await response.text();
 
   if (!response.ok) {
-    console.error(`[delete-note] Error (${response.status}):`, rawBody);
     let errorMsg = `Server error (${response.status})`;
     try {
       const parsed = JSON.parse(rawBody);
@@ -38,6 +37,4 @@ export async function deleteNoteCloud(params: DeleteNoteParams): Promise<void> {
     }
     throw new Error(errorMsg);
   }
-
-  console.log(`[delete-note] Success:`, rawBody);
 }

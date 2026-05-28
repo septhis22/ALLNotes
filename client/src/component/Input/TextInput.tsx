@@ -98,7 +98,6 @@ export const NoteEditor = () => {
       await autoSync(userId);
       setTimeout(() => setIsSyncing(false), 1000);
     } catch (error) {
-      console.error("Sync failed:", error);
       setIsSyncing(false);
     }
   };

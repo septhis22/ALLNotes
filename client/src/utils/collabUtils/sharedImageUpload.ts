@@ -3,7 +3,7 @@
 import { getSupabase } from "../../lib/supabase";
 
 const SHARED_UPLOAD_URL =
-  "https://aybmxfhcfyulttbvhive.supabase.co/functions/v1/shared-image-upload";
+  `${import.meta.env.VITE_supabaseurl}/functions/v1/shared-image-upload`;
 
 interface SharedUploadOptions {
   /** Optional folder path. Defaults to `shared-notes/<note_id>` on the server. */
@@ -82,8 +82,6 @@ export async function uploadSharedImage(
     const rawBody = await res.text();
 
     if (!res.ok) {
-      console.error(`[shared-image-upload] ${res.status}:`, rawBody);
-
       let parsed: { error?: string } = {};
       try {
         parsed = JSON.parse(rawBody);
@@ -133,7 +131,6 @@ export async function uploadSharedImage(
 
   if (!cloudinaryRes.ok) {
     const errData = await cloudinaryRes.json().catch(() => ({}));
-    console.error("[shared-image-upload] Cloudinary upload failed:", errData);
     throw new Error(
       errData?.error?.message ?? `Cloudinary upload failed (${cloudinaryRes.status})`
     );
@@ -141,7 +138,5 @@ export async function uploadSharedImage(
 
   const cloudinaryData = await cloudinaryRes.json();
 
-  // ── 4. Return the secure CDN URL ─────────────────────────────────────────
-  console.log("[shared-image-upload] Success:", cloudinaryData.secure_url);
   return cloudinaryData.secure_url as string;
 }

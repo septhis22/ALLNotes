@@ -5,9 +5,7 @@ const getAuthToken = (): string | null => {
         const parsed = JSON.parse(authData);
         return parsed.access_token;
       }
-    } catch (error) {
-      console.error('Error parsing auth token:', error);
-    }
+    } catch (error) {}
     return null;
   };
 

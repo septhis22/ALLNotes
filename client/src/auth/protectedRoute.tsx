@@ -14,16 +14,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { isAuthenticated, loading, userId } = useAuthContext();
   const location = useLocation();
-  
-  // Debug logging
-  console.log('🛡️ ProtectedRoute:', { loading, isAuthenticated, userId });
 
   // If still loading after 3 seconds, force render to avoid infinite loading
   const [forceShow, setForceShow] = React.useState(false);
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if (loading) {
-        console.warn('⚠️ Force showing content after timeout');
         setForceShow(true);
       }
     }, 3000);

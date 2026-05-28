@@ -70,7 +70,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
       setUserId(authUser.id);
       setUserD(buildUserDetails(authUser, fetchedProfile));
     } catch (err) {
-      console.error("Error in applyAuthState:", err);
       setUserId(authUser.id);
       setUserD({ userName: authUser.email?.split('@')[0] || "User", email: authUser.email || "" });
     } finally {
@@ -87,7 +86,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
         .single();
 
       if (error) {
-        console.warn("Profile fetch error (may not exist yet):", error.message);
         // Return null - user might not have a profile yet
         return null;
       }
@@ -101,7 +99,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
         email: data?.email ?? "",
       };
     } catch (err) {
-      console.error("Profile fetch exception:", err);
       return null;
     }
   };
@@ -110,19 +107,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
     let isMounted = true;
 
     const initAuth = async () => {
-      console.log('🔐 Initializing auth...');
-      
       try {
         const { data: { session }, error } = await getSupabase().auth.getSession();
-        
+
         if (!isMounted) return;
-        
-        if (error) {
-          console.error('Session error:', error);
-        }
-        
-        console.log('📋 Session check result:', session ? 'Found' : 'None');
-        
+
+        if (error) {}
+
         // Handle session
         const authUser = session?.user ?? null;
         setUser(authUser);
@@ -153,7 +144,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
               email: profile?.email ?? authUser.email ?? ""
             });
           } catch (profileErr) {
-            console.warn('Profile fetch failed:', profileErr);
             setUserD({ 
               userName: authUser.email?.split('@')[0] ?? "User", 
               email: authUser.email ?? "" 
@@ -163,12 +153,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
           setUserId("Guest");
           setUserD({ userName: "Guest", email: "" });
         }
-        
+
         setLoading(false);
-        console.log('✅ Auth initialized, loading set to false');
-        
       } catch (err) {
-        console.error('Auth init error:', err);
         if (isMounted) {
           setLoading(false);
         }
@@ -179,9 +166,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
 
     const { data: { subscription } } = getSupabase().auth.onAuthStateChange(
       (_event, session) => {
-        console.log('🔄 Auth state changed:', _event);
         if (!isMounted) return;
-        
+
         applyAuthState(session);
       }
     );

@@ -32,7 +32,6 @@ const CollaborationPage = () => {
         setToken(session?.access_token ?? null);
         setUserName(name);
       } catch (err) {
-        console.error("Failed to initialize session:", err);
         setToken(null);
       } finally {
         setTokenLoaded(true);
@@ -46,7 +45,7 @@ const CollaborationPage = () => {
     if (!tokenLoaded || !token) return;
 
     const doc = new Y.Doc();
-    const wsUrl = "ws://localhost:1234";
+    const wsUrl = import.meta.env.VITE_SERVER_URL;
     const wsParams: Record<string, string> = token ? { token } : {};
 
     const provider = new WebsocketProvider(wsUrl, roomId, doc, {
@@ -72,7 +71,7 @@ const CollaborationPage = () => {
     };
   }, [tokenLoaded, token, roomId]);
 
-  const wsUrl = "ws://localhost:1234";
+  const wsUrl = import.meta.env.VITE_SERVER_URL;
 
   return (
     <div className="flex h-screen w-screen bg-[#111111] text-gray-200 overflow-hidden">

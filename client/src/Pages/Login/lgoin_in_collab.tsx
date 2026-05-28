@@ -15,7 +15,6 @@ export async function loginWithEmail(email: string, password: string) {
     email,
     password,
   });
-  console.log(data);
   return {data,error};
 }
 
@@ -29,10 +28,8 @@ const LoginInCollab: React.FC<LoginInCollabProps> = ({ setUserId }) => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    console.log("Email:", email);
-    console.log("Password:", password);
 
-   
+
     // Example: simple validation
     if (!email || !password) {
       setError("Please fill in both fields.");
@@ -40,15 +37,13 @@ const LoginInCollab: React.FC<LoginInCollabProps> = ({ setUserId }) => {
     }
     loginWithEmail(email, password).then(({ data, error }) => {
       if (error) {
-        console.log(error);
         setError(error.message);
       } else {
         setError(null);
-        console.log(data.user?.id);
         if (data.user?.id) {
           setUserId(data.user.id);
         }
-          }
+      }
     });
   };
 

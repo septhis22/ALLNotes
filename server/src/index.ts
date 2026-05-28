@@ -60,7 +60,6 @@ async function loadFromDatabase(docName: string): Promise<Uint8Array | null> {
     const rows: NoteRow[] = await sharedNoteRepository.fetchNoteData(docName);
 
     if (!rows.length || !rows[0].content) {
-      console.log(`[DB] No existing content for "${docName}" — starting fresh`);
       return null;
     }
 
@@ -76,11 +75,8 @@ async function loadFromDatabase(docName: string): Promise<Uint8Array | null> {
       hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
     );
 
-    console.log(`[DB] Loaded ${bytes.byteLength} bytes for "${docName}"`);
     return bytes;
-
   } catch (err: any) {
-    console.error(`[DB] Load error for "${docName}":`, err.message);
     return null;
   }
 }
@@ -93,12 +89,7 @@ async function saveToDatabase(docName: string, snapshot: Uint8Array): Promise<vo
       '\\x' + Buffer.from(snapshot).toString('hex');
 
     await sharedNoteRepository.updateNotedata(docName, hexContent);
-
-    console.log(`[DB] Saved ${snapshot.byteLength} bytes for "${docName}"`);
-
-  } catch (err: any) {
-    console.error(`[DB] Save error for "${docName}":`, err.message);
-  }
+  } catch (err: any) {}
 }
 
 // ─── Guard against saving empty docs during initial load ──────────────────────
@@ -117,14 +108,12 @@ const debouncedSave = debounce(
   (docName: string, snapshot: Uint8Array) => {
     // Don't save while we're still loading this doc from DB
     if (docsCurrentlyLoading.has(docName)) {
-      console.log(`[DB] Skipping save for "${docName}" — still loading from DB`);
       return;
     }
 
     // Safety: don't overwrite a doc that had real content with an empty snapshot
     const prevSize = lastKnownDbSize.get(docName) ?? 0;
     if (prevSize > 100 && snapshot.byteLength <= 4) {
-      console.warn(`[DB] Refusing to overwrite "${docName}" (${prevSize}B) with empty snapshot (${snapshot.byteLength}B)`);
       return;
     }
 
@@ -186,7 +175,6 @@ const server = http.createServer((req: http.IncomingMessage, res: http.ServerRes
 const wss = new WebSocketServer({ server });
 
 wss.on('connection', (conn: WebSocket, req: http.IncomingMessage) => {
-  console.log(`[WS] Incoming connection request URL: ${req.url}`);
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
   const room = url.pathname.slice(1) || '(default)';
 
@@ -212,22 +200,15 @@ wss.on('connection', (conn: WebSocket, req: http.IncomingMessage) => {
       conn.emit('message', msg);
     }
 
-    console.log(`[WS] Client connected → room: "${room}"  (total: ${wss.clients.size})`);
+    conn.on('close', () => {});
 
-    conn.on('close', () => {
-      console.log(`[WS] Client left → room: "${room}"  (total: ${wss.clients.size})`);
-    });
-
-    conn.on('error', (err: Error) => {
-      console.error(`[WS] Socket error in room "${room}":`, err.message);
-    });
+    conn.on('error', (err: Error) => {});
   };
 
   // Mock Response: Called by the middleware if authentication & authorization fail
   const res: any = {
     status: (code: number) => ({
       json: (data: any) => {
-        console.log(`[WS] Auth failed with status ${code}:`, data);
         conn.off('message', bufferHandler); // stop buffering on a doomed connection
         conn.close(1008, data.error || 'Authentication Failed');
       }
@@ -237,7 +218,7 @@ wss.on('connection', (conn: WebSocket, req: http.IncomingMessage) => {
   // Adapter to bind necessary query/params for the middleware
   // y-websocket passes the URL pattern: `ws://localhost:1234/some-room?token=123...`
   const token = url.searchParams.get('token');
-  
+
   // Isolate just the room name (since the room string might actually carry ?token inside the path if not cleanly resolved from searchParams)
   let cleanRoomName = room;
   if (cleanRoomName.includes('?')) {
@@ -260,8 +241,6 @@ wss.on('connection', (conn: WebSocket, req: http.IncomingMessage) => {
 // ─── Persistence pipeline ─────────────────────────────────────────────────────
 setPersistence({
   bindState: async (docName: string, ydoc: YTypes.Doc): Promise<void> => {
-    console.log(`[DB] Loading document: "${docName}"`);
-
     // Mark this doc as "loading" so the debounced save won't persist an
     // empty merge that the sync handshake may produce before we finish.
     docsCurrentlyLoading.add(docName);
@@ -272,7 +251,6 @@ setPersistence({
         // Remember the real content size before applying
         lastKnownDbSize.set(docName, persisted.byteLength);
         Y.applyUpdate(ydoc, persisted);
-        console.log(`[DB] Applied ${persisted.byteLength} bytes to "${docName}"`);
       }
     } finally {
       // Always clear the loading flag so future saves proceed normally
@@ -286,13 +264,11 @@ setPersistence({
   },
 
   writeState: async (docName: string, ydoc: YTypes.Doc): Promise<void> => {
-    console.log(`[DB] Final flush for: "${docName}"`);
     const fullState = Y.encodeStateAsUpdate(ydoc);
 
     // Safety: don't overwrite a populated doc with an empty one on disconnect
     const prevSize = lastKnownDbSize.get(docName) ?? 0;
     if (prevSize > 100 && fullState.byteLength <= 4) {
-      console.warn(`[DB] writeState: Refusing to overwrite "${docName}" (${prevSize}B) with empty state (${fullState.byteLength}B)`);
       return;
     }
 
@@ -303,10 +279,8 @@ setPersistence({
 
 // ─── Graceful shutdown ────────────────────────────────────────────────────────
 function shutdown(signal: string) {
-  console.log(`\n[SERVER] ${signal} received — closing…`);
   wss.close(() => {
     server.close(() => {
-      console.log('[SERVER] Shutdown complete.');
       process.exit(0);
     });
   });
@@ -315,7 +289,4 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Yjs WebSocket Server running on http://:${PORT}`);
-  console.log(`   Health check → http://localhost:${PORT}/health`);
-});
+server.listen(PORT, '0.0.0.0', () => {});

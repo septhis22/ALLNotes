@@ -18,8 +18,6 @@
  * userName="Alice"
  * userColor="#f97316"
  * className="my-editor"
- * onStatusChange={(status) => console.log(status)}
- * onDocUpdate={(update) => console.log('bytes:', update.byteLength)}
  * />
  */
 
@@ -194,7 +192,6 @@ function EditorUI({
 
     const handleConnectionClose = (event: CloseEvent | null) => {
       if (event && event.code === 1008) {
-        console.warn('[CollabEditor] Auth rejected by server — stopping reconnection.');
         provider.disconnect();
         setStatusWithCallback('auth-failed');
       }
@@ -229,10 +226,8 @@ function EditorUI({
       try {
         const url = await uploadSharedImage(file, room);
         localUploadsRef.current.add(url);
-        console.log('[CollabEditor] uploadFile resolved URL:', url);
         return url;
       } catch (error) {
-        console.error('Image upload failed:', error);
         throw error;
       }
     },
@@ -249,7 +244,6 @@ function EditorUI({
 
     for (const url of knownUrlsRef.current) {
       if (!currentUrls.has(url) && localUploadsRef.current.has(url)) {
-        console.log('[image-delete] Detected removal:', url);
         deleteSharedImage(url, room);
         localUploadsRef.current.delete(url);
       }

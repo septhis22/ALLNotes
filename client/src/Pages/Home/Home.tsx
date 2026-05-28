@@ -74,7 +74,7 @@ const Testpage = () => {
         setSharedContent(null);
       }
     }).catch(err => {
-      if (!cancelled) console.error('Failed to load shared note:', err);
+      !cancelled;
     }).finally(() => {
       if (!cancelled) setLoadingShared(false);
     });
@@ -89,16 +89,12 @@ const Testpage = () => {
           <NewSidebar />
         </div>
       </aside>
-
       <div className="flex flex-col flex-1 overflow-hidden bg-[#191919]">
         <main className="flex-1 overflow-hidden relative">
           {isShared ? (
             // Shared note → read-only preview
-            loadingShared ? (
-              <div className="flex items-center justify-center h-full text-[#555555] text-sm">
-                Loading preview…
-              </div>
-            ) : sharedContent ? (
+            (loadingShared ? (<div className="flex items-center justify-center h-full text-[#555555] text-sm">Loading preview…
+                            </div>) : sharedContent ? (
               <ReadOnlyEditor
                 key={sharedNoteId}
                 data={sharedContent}
@@ -115,10 +111,10 @@ const Testpage = () => {
                   Open in Collaborative Editor
                 </button>
               </div>
-            )
+            ))
           ) : (
             // Private note → full editor
-            <MyEditor />
+            (<MyEditor />)
           )}
         </main>
       </div>

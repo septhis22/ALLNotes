@@ -137,9 +137,7 @@ export default function NewSidebar() {
 
   const handleLogOut = async () => {
     const { error } = await getSupabase().auth.signOut();
-    if (error) {
-      console.error("Error signing out:", error);
-    } else {
+    if (error) {} else {
       navigate('/');
       window.location.reload();
     }
@@ -152,15 +150,10 @@ export default function NewSidebar() {
       if (userId && userId !== "Guest") {
         try {
           const groups = await noteCollaboratorsRepository.getAllSharedNote(userId);
-          console.log(groups);
           setAllSharedGroups(groups);
-        } catch (err) {
-          console.error("Error fetching shared notes:", err);
-        }
+        } catch (err) {}
       }
-    } catch (error) {
-      console.error("Error fetching notes:", error);
-    }
+    } catch (error) {}
   }, [setNotes, userId]);
 
   useEffect(() => {
@@ -225,9 +218,7 @@ export default function NewSidebar() {
             },
           ]);
         }
-      } catch (error) {
-        console.error("Error creating shared note:", error);
-      }
+      } catch (error) {}
     }
     setPendingNodeId(null);
   };
@@ -249,9 +240,7 @@ export default function NewSidebar() {
     try {
       await profilesRepository.updateCurrentUserName(editName);
       updateProfile();
-    } catch (error) {
-      console.error("Error updating username:", error);
-    }
+    } catch (error) {}
     setIsEditingName(false);
   };
 
@@ -311,7 +300,6 @@ export default function NewSidebar() {
     try {
       await deleteNoteCloud({ note_id: noteId, note_type: isShared ? "shared" : "private" });
     } catch (err) {
-      console.error("Deletion failed, reverting:", err);
       // Rollback UI
       if (isShared) {
         setSharedNotes(prevSharedNotes);

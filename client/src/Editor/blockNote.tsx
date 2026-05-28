@@ -68,13 +68,15 @@ function extractCloudinaryUrls(blocks: any[]): Set<string> {
   return urls;
 }
 
+import EmptyNoteState from "../Pages/EmptyNoteState";
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export default function MyEditor() {
   const { id, notes, setNotes } = useStore();
   const { userId } = useAuthContext();
 
-  if (!id) return <div>Select a note</div>;
+  if (!id) return <EmptyNoteState />;
 
   const currentNote = notes.find((n) => n.id === id);
   if (!currentNote) return <div>Loading...</div>;
@@ -121,7 +123,6 @@ function EditorInstance({
     initialContent: note.note_data ?? undefined,
 
     uploadFile: async (file: File) => {
-      console.log("[upload] Starting:", file.name, file.size, "bytes");
       try {
         const url = await uploadFileToCloudinary(file, {
           folder: `user_${userId}/notes`,
@@ -133,10 +134,8 @@ function EditorInstance({
         sizeMap.current.set(url, file.size);
         urlsRef.current.add(url);
 
-        console.log("[upload] Done:", url, "| size stored:", file.size);
         return url;
       } catch (error) {
-        console.error("[upload] Failed:", error);
         throw error;
       }
     },
@@ -155,19 +154,7 @@ function EditorInstance({
           // Look up the file size from our persistent sizeMap
           const fileSize = sizeMap.current.get(url) ?? 0;
 
-          console.log(
-            "[media-delete] Detected removal:",
-            url,
-            "| file_size from sizeMap:", fileSize
-          );
-
-          if (fileSize === 0) {
-            console.warn(
-              "[media-delete] WARNING: file_size is 0 — refund will be skipped by edge function.",
-              "This means the media was not uploaded in this session.",
-              "Consider storing file sizes in your DB alongside the URL."
-            );
-          }
+          if (fileSize === 0) {}
 
           // Delete from Cloudinary + refund storage
           deleteCloudinaryFile(url); // size looked up server-side from cloudinary_files

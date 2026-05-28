@@ -81,7 +81,6 @@ export const profilesRepository = {
     });
 
     if(error){
-      console.error('error fectching status');
       return false;
     }
 

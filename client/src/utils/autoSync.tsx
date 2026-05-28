@@ -5,27 +5,18 @@ const autoSync= async(userId:string)=>{
     const unsycnedNotes  = await getUnsyncedNotes(userId);
     if(userId!=="Guest"){
         try{
-            
             for(const note of unsycnedNotes){
                 try{
-                    console.log(note);
                     const res = await notesRepository.updateOwned({
                       id: note.id,
                       title: note.title,
                       note_data: note.note_data,
                       updatedat: note.updatedat || (note as any).updatedAt,
                     });
-                    console.log(res);
                     updateNoteSync(note.id, true);
-                }catch(error){
-                    console.log("error updating table: ",error);
-                }
+                }catch(error){}
             }
-    
-            console.log("auto synced sucess");
-        }catch{
-            console.log("Auto synced failed");
-        }
+        }catch{}
     }
     else{
         return;

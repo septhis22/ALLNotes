@@ -48,8 +48,6 @@ export const createNewNote = async (
       );
     }
   } catch (err) {
-    console.error('Error creating new note:', err);
-
     // If cloud sync failed, mark as unsynced
     setNotes((prevNotes: Note[]) =>
       prevNotes.map((note) =>

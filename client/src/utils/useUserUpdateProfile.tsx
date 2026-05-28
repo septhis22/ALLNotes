@@ -28,12 +28,10 @@ const useUpdateProfile = () => {
                     userName: profile.full_name || profile.email || "User",
                     email: profile.email 
                 };
-                console.log("From the update profile hook", temp);
                 setUserD(temp);
                 return { success: true, data: temp };
             }
         } catch (error) {
-            console.error('Error updating profile:', error);
             return { error: error instanceof Error ? error.message : String(error) };
         }
         

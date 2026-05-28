@@ -34,14 +34,9 @@ const Login = () => {
       try {
         const verifiedUserId = await verifyUser();
         if (verifiedUserId && verifiedUserId !== "Guest") {
-          console.log('Auto-login successful for user:', verifiedUserId);
           updateProfile();
-        } else {
-          console.log('No valid session found');
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-      } finally {
+        } else {}
+      } catch (error) {} finally {
         setIsLoading(false);
       }
     };
@@ -72,15 +67,13 @@ const Login = () => {
       const { data, error } = await loginWithEmail(email, password);
       
       if (error) {
-        console.log('Login error:', error);
         setError(error.message);
       } else if (data.user?.id) {
         setUserId(data.user.id);
-        console.log('Manual login successful for user:', data.user.id);
-        
+
         // Ensure profile exists
         await updateProfile();
-        
+
         syncNotes(data.user.id, () => {
           setIsAuthenticating(false);
           navigate('/', { state: { user: data.user.id } });
@@ -89,7 +82,6 @@ const Login = () => {
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
-      console.error("Login error:", err);
     } finally {
       setIsAuthenticating(false);
     }

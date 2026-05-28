@@ -13,18 +13,15 @@ export const Verify = () => {
   useEffect(() => {
     const handleVerification = async () => {
       try {
-        console.log('Full URL:', window.location.href);
-        
         // Check for error in hash first
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const error = hashParams.get('error');
         const errorCode = hashParams.get('error_code');
         const errorDescription = hashParams.get('error_description');
-        
+
         if (error) {
-          console.log('Error found in hash:', { error, errorCode, errorDescription });
           setVerificationStatus('error');
-          
+
           if (errorCode === 'otp_expired') {
             setErrorMessage('Your verification link has expired. Please request a new verification email.');
           } else if (errorCode === 'access_denied') {
@@ -34,48 +31,35 @@ export const Verify = () => {
           }
           return;
         }
-        
+
         // Check if we have tokens in the hash (successful verification)
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
         const tokenType = hashParams.get('type');
-        
-        console.log('Access Token:', accessToken ? 'Present' : 'Not found');
-        console.log('Refresh Token:', refreshToken ? 'Present' : 'Not found');
-        console.log('Token Type:', tokenType);
 
         if (accessToken && refreshToken) {
-          // User has been successfully verified and we have tokens
-          console.log('Tokens found in hash, setting session...');
-          
           const { data, error } = await getSupabase().auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
 
           if (error) {
-            console.error('Error setting session:', error);
             setVerificationStatus('error');
             setErrorMessage(`Failed to set session: ${error.message}`);
           } else {
-            console.log('Session set successfully:', data);
             setVerificationStatus('success');
-            
+
             // Check current user
             const { data: userData } = await getSupabase().auth.getUser();
-            console.log('Current user after setting session:', userData);
 
             const user = userData.user;
             if (user) {
               // Ensure profile row exists immediately
               try {
                 await profilesRepository.addOrUpdateName("User");
-                console.log('Automatic profile creation successful');
-              } catch (profileErr) {
-                console.error('Failed to create initial profile:', profileErr);
-              }
+              } catch (profileErr) {}
             }
-            
+
             // Clean up URL by removing hash
             window.history.replaceState({}, document.title, window.location.pathname);
           }
@@ -86,25 +70,18 @@ export const Verify = () => {
         const token = searchParams.get('token');
         const type = searchParams.get('type');
 
-        console.log('Query Token:', token);
-        console.log('Query Type:', type);
-
         if (token && type === 'signup') {
-          console.log('Attempting traditional OTP verification...');
-          
           const { data, error } = await getSupabase().auth.verifyOtp({
             token_hash: token,
             type: 'signup'
           });
 
           if (error) {
-            console.error('Traditional verification error:', error);
             setVerificationStatus('error');
             setErrorMessage(`Verification failed: ${error.message}`);
           } else {
-            console.log('Traditional verification successful:', data);
             setVerificationStatus('success');
-            
+
             setTimeout(() => {
               navigate('/dashboard');
             }, 3000);
@@ -112,13 +89,9 @@ export const Verify = () => {
           return;
         }
 
-        // No verification tokens found
-        console.log('No verification tokens found in URL');
         setVerificationStatus('error');
         setErrorMessage('No verification tokens found. Please check your email verification link.');
-
       } catch (err: any) {
-        console.error('Unexpected error during verification:', err);
         setVerificationStatus('error');
         setErrorMessage(`An unexpected error occurred: ${err.message || 'Unknown error'}`);
       }
@@ -134,10 +107,7 @@ export const Verify = () => {
   const handleAddName= async ()=>{
     try{
       await profilesRepository.addOrUpdateName(name);
-      console.log("Name Updated succesfully");
-    }catch{
-      console.log("eror adding the name");
-    }
+    }catch{}
   }
 
   const handleResendClick = async () => {

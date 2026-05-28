@@ -67,11 +67,7 @@ export const noteCollaboratorsRepository = {
     const results = data as CollabResponse[];
 
     results.forEach((res) => {
-        if (res.status) {
-          console.log(`✅ ${res.email} was added!`);
-        } else {
-          console.warn(`❌ Could not add ${res.email}`);
-        }
+        if (res.status) {} else {}
       });
 
   },
@@ -135,8 +131,7 @@ export const noteCollaboratorsRepository = {
         .rpc('get_grouped_shared_notes', { target_user_id: currentUserId });
 
     if (error) {
-        console.error("Error fetching grouped notes:", error);
-        throw error;
+      throw error;
     }
 
     return data as OwnerNoteGroup[];

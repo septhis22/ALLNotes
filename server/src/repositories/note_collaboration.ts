@@ -21,7 +21,6 @@ export const noteCollaboratorsRepository = {
             .rpc('get_grouped_shared_notes', { target_user_id: currentUserId });
 
         if (error) {
-            console.error("Error fetching grouped notes:", error);
             throw error;
         }
 

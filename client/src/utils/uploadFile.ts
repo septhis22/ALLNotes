@@ -22,7 +22,7 @@ interface CloudinaryTicket {
 }
 
 const EDGE_FUNCTION_URL =
-  "https://aybmxfhcfyulttbvhive.supabase.co/functions/v1/file-handler";
+  `${import.meta.env.VITE_supabaseurl}/functions/v1/file-handler`;
 
 export async function uploadFileToCloudinary(
   file: File,
@@ -72,8 +72,6 @@ export async function uploadFileToCloudinary(
     const rawBody = await res.text();
 
     if (!res.ok) {
-      console.error(`[file-handler] ${res.status}:`, rawBody);
-
       let parsed: { error?: string } = {};
       try { parsed = JSON.parse(rawBody); } catch { /* not JSON */ }
 
@@ -130,7 +128,6 @@ export async function uploadFileToCloudinary(
 
   if (!cloudinaryRes.ok) {
     const errData = await cloudinaryRes.json().catch(() => ({}));
-    console.error("[Cloudinary] Upload failed:", errData);
     throw new Error(
       errData?.error?.message ?? `Cloudinary upload failed (${cloudinaryRes.status})`
     );

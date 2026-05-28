@@ -15,9 +15,7 @@ export const getSupabase = (): SupabaseClient => {
   const supabaseAnonKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_annonkey)
     || (typeof process !== 'undefined' && process.env?.VITE_annonkey);
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('⚠️ Supabase credentials missing. If running via CLI, ensure VITE_supabaseurl and VITE_annonkey are in your environment or .env file.');
-  }
+  if (!supabaseUrl || !supabaseAnonKey) {}
 
   _supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
   return _supabase;

@@ -3,7 +3,7 @@
 import { getSupabase } from "../../lib/supabase";
 
 const SHARED_DELETE_URL =
-  "https://aybmxfhcfyulttbvhive.supabase.co/functions/v1/shared-image-delete";
+  `${import.meta.env.VITE_supabaseurl}/functions/v1/shared-image-delete`;
 
 /**
  * Deletes a shared-note image from Cloudinary via the shared-image-delete
@@ -29,11 +29,8 @@ export async function deleteSharedImage(
     } = await supabase.auth.getSession();
 
     if (!session?.access_token) {
-      console.warn("[shared-image-delete] No active session — skipping");
       return;
     }
-
-    console.log("[shared-image-delete] Deleting:", url, "| noteId:", noteId);
 
     const res = await fetch(SHARED_DELETE_URL, {
       method: "POST",
@@ -45,19 +42,8 @@ export async function deleteSharedImage(
     });
 
     const rawBody = await res.text();
-    console.log("[shared-image-delete] Status:", res.status, "Body:", rawBody);
 
     const data = JSON.parse(rawBody);
-    if (!res.ok) {
-      console.warn("[shared-image-delete] Failed:", data);
-    } else {
-      console.log(
-        "[shared-image-delete] Deleted:", data.public_id,
-        "| result:", data.result,
-        "| bytes_refunded:", data.bytes_refunded
-      );
-    }
-  } catch (err) {
-    console.warn("[shared-image-delete] Error:", err);
-  }
+    if (!res.ok) {} else {}
+  } catch (err) {}
 }

@@ -44,16 +44,14 @@ export class TelemetryAggregator {
         // Ignore negative latencies potentially caused by clock skew across different physical machines
         // But for local test, it works perfectly.
         if (latencyMs < 0) return;
-        
+
         this.latencies.push(latencyMs);
         this.payloadSizes.push(report.payloadSize);
         this.totalSyncs++;
 
-        console.log(`[Telemetry] Sync Received | Hash: ${report.updateHash} | ${senderId} -> ${report.clientId} | Latency: ${latencyMs}ms | Size: ${report.payloadSize}B`);
-
         const sumLatency = this.latencies.reduce((a, b) => a + b, 0);
         const avgLatency = sumLatency / this.totalSyncs;
-        console.log(`[Telemetry Avg] Total Syncs: ${this.totalSyncs} | Current Avg Sync Time: ${avgLatency.toFixed(2)}ms`);
+        console.log(`[Telemetry] Synced update of ${report.payloadSize} bytes in ${latencyMs}ms. Avg latency: ${avgLatency.toFixed(2)}ms`);
       }
     }
   };
