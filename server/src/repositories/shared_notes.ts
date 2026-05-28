@@ -14,6 +14,7 @@ export interface NoteRow{
 
 export const sharedNoteRepository = {
    
+    
 
 
     async fetchNoteData(noteId: string): Promise<NoteRow[]> {

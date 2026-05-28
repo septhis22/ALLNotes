@@ -15,6 +15,20 @@ const getCurrentUser = async () => {
 };
 
 export const profilesRepository = {
+  async fetchCurrentUserName(): Promise<string> {
+    const user = await getCurrentUser();
+
+    const { data, error } = await getSupabase()
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data || !data.full_name) return 'user';
+    return data.full_name;
+  },
+
   async fetchCurrent(): Promise<ProfileRow | null> {
     const user = await getCurrentUser();
 

@@ -1,6 +1,33 @@
 import { getSupabase } from "../lib/supabase.js";
 
+export interface NestedNote {
+    id: string;
+    title: string;
+    content: string; // or Uint8Array/string based on your bytea handling
+    created_at: string;
+    updated_at: string;
+}
+
+export interface OwnerNoteGroup {
+    owner_name: string;
+    owner_email: string;
+    notes: NestedNote[];
+}
+
 export const noteCollaboratorsRepository = {
+
+    async getAllSharedNote(currentUserId: string): Promise<OwnerNoteGroup[]> {
+        const { data, error } = await getSupabase()
+            .rpc('get_grouped_shared_notes', { target_user_id: currentUserId });
+
+        if (error) {
+            console.error("Error fetching grouped notes:", error);
+            throw error;
+        }
+
+        return data as OwnerNoteGroup[];
+    },
+
     async VerifyUser(noteId: string, userId: string): Promise<boolean> {
         const { data, error } = await getSupabase()
             .from('note_collaborators')

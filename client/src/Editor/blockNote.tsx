@@ -21,30 +21,28 @@ import type { Note } from "../store/store";
  * to generate an automatic title.
  */
 function extractTitleFromBlocks(blocks: any[], maxWords: number = 5): string {
-  let text = "";
+  // Only use the first block (first line) for the title
   for (const block of blocks) {
-    if (block.content) {
-      if (Array.isArray(block.content)) {
-        for (const inline of block.content) {
-          if (inline.type === "text" && inline.text) {
-            text += inline.text + " ";
-          }
+    if (!block.content) continue;
+
+    let text = "";
+    if (Array.isArray(block.content)) {
+      for (const inline of block.content) {
+        if (inline.type === "text" && inline.text) {
+          text += inline.text + " ";
         }
-      } else if (typeof block.content === "string") {
-        text += block.content + " ";
       }
+    } else if (typeof block.content === "string") {
+      text = block.content;
     }
-    
-    // Stop early if we have enough words
-    const currentWords = text.trim().split(/\s+/).filter(Boolean);
-    if (currentWords.length >= maxWords) {
-      return currentWords.slice(0, maxWords).join(" ");
+
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    if (words.length > 0) {
+      return words.slice(0, maxWords).join(" ");
     }
   }
 
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "Untitled Note";
-  return words.slice(0, maxWords).join(" ");
+  return "Untitled Note";
 }
 
 /**

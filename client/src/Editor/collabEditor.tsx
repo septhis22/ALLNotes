@@ -23,7 +23,7 @@
  * />
  */
 
-'use client'; 
+'use client';
 
 import React, {
   useEffect,
@@ -44,6 +44,7 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { uploadSharedImage } from '../utils/collabUtils/sharedImageUpload';
 import { deleteSharedImage } from '../utils/collabUtils/sharedImageDelete';
+import { TelemetryMonitor } from '../telemetry/TelemetryMonitor';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,10 +87,10 @@ function extractCloudinaryUrls(blocks: any[]): Set<string> {
   const urls = new Set<string>();
   for (const block of blocks) {
     if (
-      block.type === "image" &&
+      block.type === 'image' &&
       block.props?.url &&
-      typeof block.props.url === "string" &&
-      block.props.url.includes("res.cloudinary.com")
+      typeof block.props.url === 'string' &&
+      block.props.url.includes('res.cloudinary.com')
     ) {
       urls.add(block.props.url);
     }
@@ -102,97 +103,38 @@ function extractCloudinaryUrls(blocks: any[]): Set<string> {
   return urls;
 }
 
-const STATUS_STYLES: Record<ConnectionStatus, { dot: string; label: string; bg: string }> = {
-  idle:         { dot: '#94a3b8', label: 'offline',      bg: 'rgba(148,163,184,0.1)' },
-  connecting:   { dot: '#f59e0b', label: 'connecting…',  bg: 'rgba(245,158,11,0.1)'  },
-  connected:    { dot: '#10b981', label: 'live',         bg: 'rgba(16,185,129,0.1)'  },
-  disconnected: { dot: '#94a3b8', label: 'disconnected', bg: 'rgba(148,163,184,0.1)' },
-  error:        { dot: '#ef4444', label: 'error',        bg: 'rgba(239,68,68,0.1)'   },
-  'auth-failed':{ dot: '#ef4444', label: 'auth failed',  bg: 'rgba(239,68,68,0.15)' },
+// ─── Status config ────────────────────────────────────────────────────────────
+
+const STATUS_CONFIG: Record<
+  ConnectionStatus,
+  { dotClass: string; label: string; badgeClass: string }
+> = {
+  idle:          { dotClass: 'bg-slate-500',                    label: 'offline',      badgeClass: 'bg-slate-500/10 text-slate-400' },
+  connecting:    { dotClass: 'bg-amber-400 animate-pulse',      label: 'connecting…',  badgeClass: 'bg-amber-400/10 text-amber-400' },
+  connected:     { dotClass: 'bg-emerald-400 shadow-[0_0_5px_#34d399]', label: 'live', badgeClass: 'bg-emerald-400/10 text-emerald-400' },
+  disconnected:  { dotClass: 'bg-slate-500',                    label: 'disconnected', badgeClass: 'bg-slate-500/10 text-slate-400' },
+  error:         { dotClass: 'bg-red-500',                      label: 'error',        badgeClass: 'bg-red-500/10 text-red-400' },
+  'auth-failed': { dotClass: 'bg-red-500',                      label: 'auth failed',  badgeClass: 'bg-red-500/10 text-red-400' },
 };
 
 // ─── StatusBadge ─────────────────────────────────────────────────────────────
 
 function StatusBadge({ status, room }: { status: ConnectionStatus; room: string }) {
-  const s = STATUS_STYLES[status];
+  const s = STATUS_CONFIG[status];
   return (
     <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '3px 10px 3px 8px',
-        borderRadius: 99,
-        background: s.bg,
-        fontSize: 11,
-        fontFamily: 'ui-monospace, "Cascadia Code", monospace',
-        color: s.dot,
-        userSelect: 'none',
-        letterSpacing: '0.03em',
-      }}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono tracking-wide select-none ${s.badgeClass}`}
     >
-      <span
-        style={{
-          width: 7,
-          height: 7,
-          borderRadius: '50%',
-          background: s.dot,
-          flexShrink: 0,
-          animation: status === 'connecting' ? 'ce-pulse 1s ease-in-out infinite' : 'none',
-          boxShadow: status === 'connected' ? `0 0 5px ${s.dot}` : 'none',
-        }}
-      />
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dotClass}`} />
       {room !== 'default' && (
-        <span style={{ opacity: 0.6 }}>{room} ·&nbsp;</span>
+        <span className="opacity-60">{room} ·&nbsp;</span>
       )}
       {s.label}
     </div>
   );
 }
 
-// ─── CSS injection ────────────────────────────────────────────────────────────
-
-let cssInjected = false;
-function injectStyles() {
-  if (cssInjected || typeof document === 'undefined') return;
-  cssInjected = true;
-  const el = document.createElement('style');
-  el.dataset.id = 'collaborative-editor';
-  el.textContent = `
-    @keyframes ce-pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.35; }
-    }
-    .ce-wrapper {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 100%;
-      min-height: 300px;
-    }
-    .ce-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding: 6px 12px;
-      border-bottom: 1px solid var(--ce-border, #e2e8f0);
-      flex-shrink: 0;
-    }
-    .ce-editor-area {
-      flex: 1;
-      overflow-y: auto;
-    }
-    .ce-editor-area .bn-editor {
-      min-height: 100%;
-    }
-    .ce-wrapper[data-theme="dark"] .ce-toolbar {
-      border-bottom-color: var(--ce-border-dark, #1e293b);
-    }
-  `;
-  document.head.appendChild(el);
-}
-
-// ─── 1. Inner Editor Component ────────────────────────────────────────────────
+// ─── Inner Editor Component ───────────────────────────────────────────────────
 
 interface EditorUIProps extends CollaborativeEditorProps {
   yjsEnv: { doc: Y.Doc; provider: WebsocketProvider; userConfig: any } | null;
@@ -207,17 +149,13 @@ function EditorUI({
   onAwarenessChange,
   style,
   showStatus = true,
-  theme = 'light',
-  serverUrl
+  theme = 'dark',
+  serverUrl,
 }: EditorUIProps) {
   const [status, setStatus] = useState<ConnectionStatus>(yjsEnv ? 'connecting' : 'idle');
   const [isSynced, setIsSynced] = useState(false);
 
-  // Track only images uploaded by THIS client for Cloudinary deletion.
-  // Remote clients don't need to clean up — only the uploader does.
   const localUploadsRef = useRef<Set<string>>(new Set());
-  // Snapshot of ALL Cloudinary URLs currently in the document (local + remote).
-  // Initialised lazily after first sync so we don't miss pre-existing images.
   const knownUrlsRef = useRef<Set<string> | null>(null);
 
   const setStatusWithCallback = useCallback(
@@ -236,11 +174,11 @@ function EditorUI({
       if (s === 'connected') setStatusWithCallback('connected');
       if (s === 'disconnected') setStatusWithCallback('disconnected');
     };
-    
+
     const handleSync = (synced: boolean) => {
       if (synced) setIsSynced(true);
     };
-    
+
     const handleError = () => setStatusWithCallback('error');
     const handleUpdate = (update: Uint8Array) => onDocUpdate?.(update);
 
@@ -254,21 +192,15 @@ function EditorUI({
     doc.on('update', handleUpdate);
     provider.awareness.on('change', handleAwarenessChange);
 
-    // ── Stop reconnecting on auth rejection ────────────────────────────
-    // y-websocket always reschedules reconnection on close. When the server
-    // closes the socket with code 1008 (Policy Violation) it means auth failed
-    // and we must not retry — otherwise the client spins in an infinite
-    // connect → reject → reconnect loop.
     const handleConnectionClose = (event: CloseEvent | null) => {
       if (event && event.code === 1008) {
         console.warn('[CollabEditor] Auth rejected by server — stopping reconnection.');
-        provider.disconnect();   // sets shouldConnect = false, cancels retry
+        provider.disconnect();
         setStatusWithCallback('auth-failed');
       }
     };
     provider.on('connection-close', handleConnectionClose);
 
-    // Initial state checks
     if (provider.wsconnected) setStatusWithCallback('connected');
     if (provider.synced) setIsSynced(true);
     handleAwarenessChange();
@@ -306,21 +238,15 @@ function EditorUI({
     },
   });
 
-  // ── Image deletion detector ─────────────────────────────────────────────────
-  // Only deletes from Cloudinary if the image was uploaded by THIS client.
-  // This avoids double-deletion across collaborators.
   const handleDocChange = useCallback(() => {
     if (!editor) return;
     const currentUrls = extractCloudinaryUrls(editor.document);
 
-    // First call: just snapshot whatever is already in the doc (pre-existing
-    // images from persistence / other clients). Don't treat them as deletions.
     if (knownUrlsRef.current === null) {
       knownUrlsRef.current = currentUrls;
       return;
     }
 
-    // Detect URLs that disappeared since the last snapshot
     for (const url of knownUrlsRef.current) {
       if (!currentUrls.has(url) && localUploadsRef.current.has(url)) {
         console.log('[image-delete] Detected removal:', url);
@@ -334,17 +260,20 @@ function EditorUI({
 
   return (
     <div
-      className={`ce-wrapper ${className} ${theme === 'dark' ? 'bg-[#191919]' : 'bg-white'}`}
+      className={`flex flex-col w-full h-full min-h-screen bg-[#111111] ${className}`}
       data-theme={theme}
       style={style}
     >
+      {/* Toolbar / status bar */}
       {showStatus && serverUrl && (
-        <div className="ce-toolbar">
+        <div className="flex items-center justify-end px-4 py-2 border-b border-[#222222] bg-[#111111] flex-shrink-0">
           <StatusBadge status={status} room={room} />
         </div>
       )}
-      <div className="ce-editor-area flex justify-center">
-        <div className="w-full max-w-[900px] mx-auto pt-15 pb-20 px-6">
+
+      {/* Editor scroll area */}
+      <div className="flex-1 overflow-y-auto bg-[#111111]">
+        <div className="w-full max-w-[900px] mx-auto pt-16 pb-24 px-8">
           {isSynced || !serverUrl ? (
             <BlockNoteView
               editor={editor}
@@ -352,8 +281,8 @@ function EditorUI({
               onChange={handleDocChange}
             />
           ) : (
-            <div className="p-8 text-center opacity-50">
-              Synchronizing document...
+            <div className="flex items-center justify-center p-8 text-[#555555] text-sm">
+              Synchronizing document…
             </div>
           )}
         </div>
@@ -362,28 +291,29 @@ function EditorUI({
   );
 }
 
-// ─── 2. Outer Loader Component ────────────────────────────────────────────────
+// ─── Outer Loader Component ───────────────────────────────────────────────────
 
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = (props) => {
-  const { serverUrl , room, token, userName, userColor } = props;
-  
-  const [yjsEnv, setYjsEnv] = useState<{ doc: Y.Doc; provider: WebsocketProvider; userConfig: any } | null>(null);
+  const { serverUrl, room, token, userName, userColor } = props;
+
+  const [yjsEnv, setYjsEnv] = useState<{
+    doc: Y.Doc;
+    provider: WebsocketProvider;
+    userConfig: any;
+  } | null>(null);
+
   const colorRef = useRef(userColor ?? randomColor());
 
   useEffect(() => {
-    injectStyles();
-
     if (!serverUrl) {
       setYjsEnv(null);
       return;
     }
 
     const doc = new Y.Doc();
-    
-    // Use y-websocket's built-in `params` option to pass the token as a query parameter.
-    // The WebsocketProvider's `url` getter appends these as `?token=XYZ` to the final URL.
+
     const urlBase = serverUrl.endsWith('/') ? serverUrl.slice(0, -1) : serverUrl;
-    
+
     const wsParams: Record<string, string> = {};
     if (token) {
       wsParams.token = token;
@@ -394,8 +324,29 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = (props) => {
       params: wsParams,
     });
 
+    const parsedUrl = new URL(urlBase);
+    const backendHttp = `http://${parsedUrl.hostname}:${parsedUrl.port}`;
+    const clientId = provider.awareness.clientID.toString();
+    const telemetry = new TelemetryMonitor(clientId, backendHttp);
+
+    doc.on('update', (update: Uint8Array, origin: any) => {
+      if (origin !== provider) {
+        telemetry.logSent(update);
+      } else {
+        telemetry.logReceived(update);
+      }
+    });
+
+    // If the DB returned "user" (no full_name set), make it distinguishable
+    // by appending a random 3-digit number. Otherwise use the real name.
+    const resolvedName = userName ?? 'user';
+    const displayName =
+      resolvedName.toLowerCase() === 'user'
+        ? `User ${Math.floor(100 + Math.random() * 900)}`
+        : resolvedName;
+
     const userConfig = {
-      name: userName ?? `User ${Math.floor(Math.random() * 1000)}`,
+      name: displayName,
       color: colorRef.current,
     };
 
@@ -410,7 +361,11 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = (props) => {
   }, [serverUrl, room, token, userName]);
 
   if (serverUrl && !yjsEnv) {
-    return <div style={{ padding: 20, textAlign: 'center', opacity: 0.5 }}>Connecting...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#111111] text-[#555555] text-sm">
+        Connecting…
+      </div>
+    );
   }
 
   return <EditorUI {...props} yjsEnv={yjsEnv} />;

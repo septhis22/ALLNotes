@@ -1,23 +1,43 @@
-import { getSupabase } from '../lib/supabase.ts';
+import { useStore } from '../store/store';
 
+import { getSupabase } from '../lib/supabase.ts';
 export interface NoteCollaboratorRow {
   note_id: string;
   user_id: string;
   permission: string[];
 }
 
+export interface NestedNote {
+    id: string;
+    title: string;
+    content: string; // or Uint8Array/string based on your bytea handling
+    created_at: string;
+    updated_at: string;
+}
+
+export interface OwnerNoteGroup {
+    owner_name: string;
+    owner_email: string;
+    notes: NestedNote[];
+}
+
+
 export interface CollabResponse{
   email: string;
   status : boolean;
 }
 
-const getCurrentUserId = async (): Promise<string> => {
-  const { data, error } = await getSupabase().auth.getUser();
-  if (error || !data.user?.id) {
-    throw new Error(error?.message ?? 'User not authenticated');
+async function getCurrentUserId(): Promise<string> {
+  const userId = useStore.getState().userId;
+  if (!userId || userId === 'Guest' || userId === '') {
+    const { data, error } = await getSupabase().auth.getUser();
+    if (error || !data.user?.id) {
+      throw new Error(error?.message ?? 'User not authenticated');
+    }
+    return data.user.id;
   }
-  return data.user.id;
-};
+  return userId;
+}
 
 export const noteCollaboratorsRepository = {
   async getPermissionForCurrentUser(noteId: string): Promise<string[]> {
@@ -105,4 +125,20 @@ export const noteCollaboratorsRepository = {
     if (error) throw error;
     return (data ?? []).length;
   },
+
+  /**
+   * Fetches all shared_notes where the current user is a collaborator (but not the owner).
+   * Joins with profiles to get the owner's display name.
+   */
+  async getAllSharedNote(currentUserId: string): Promise<OwnerNoteGroup[]> {
+    const { data, error } = await getSupabase()
+        .rpc('get_grouped_shared_notes', { target_user_id: currentUserId });
+
+    if (error) {
+        console.error("Error fetching grouped notes:", error);
+        throw error;
+    }
+
+    return data as OwnerNoteGroup[];
+}
 };

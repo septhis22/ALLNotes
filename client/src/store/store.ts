@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { OwnerNoteGroup } from '../repositories/note_collaborators.repository';
 
 export interface Note {
   userId: string;
@@ -31,6 +32,7 @@ interface GlobalStore {
   userD: UserDetails;
   allowed_storage: number;
   sharedNotes: sharedNote[];
+  allSharedGroups: OwnerNoteGroup[];
 
   // Actions
   setId: (id: string) => void
@@ -39,6 +41,7 @@ interface GlobalStore {
   setUserD: (userD: UserDetails) => void;
   setAllowedStorage: (allowed_storage: number) => void;
   setSharedNotes: (sharedNotes: sharedNote[] | ((prevSharedNotes: sharedNote[]) => sharedNote[])) => void;
+  setAllSharedGroups: (groups: OwnerNoteGroup[]) => void;
 }
 
 export const useStore = create<GlobalStore>((set) => ({
@@ -49,6 +52,7 @@ export const useStore = create<GlobalStore>((set) => ({
   userD: { userName: 'Guest', email: '' },
   allowed_storage: 0,
   sharedNotes: [],
+  allSharedGroups: [],
   // Actions
   setId: (id: string) => set({ id }),
   setNotes: (notesOrFn: Note[] | ((prevNotes: Note[]) => Note[])) => 
@@ -62,4 +66,5 @@ export const useStore = create<GlobalStore>((set) => ({
     set((state) => ({ 
       sharedNotes: typeof sharedNotesOrFn === 'function' ? sharedNotesOrFn(state.sharedNotes) : sharedNotesOrFn 
     })),
+  setAllSharedGroups: (allSharedGroups: OwnerNoteGroup[]) => set({ allSharedGroups }),
 }));

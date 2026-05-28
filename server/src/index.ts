@@ -10,6 +10,8 @@ import type { NoteRow } from './repositories/index.js';
 
 
 
+import { TelemetryAggregator } from './telemetry/TelemetryAggregator.js';
+
 const require = createRequire(import.meta.url);
 const Y = require('yjs');
 
@@ -18,6 +20,9 @@ import utils from 'y-websocket/bin/utils';
 const { setupWSConnection, setPersistence } = utils;
 
 const PORT: number = Number(process.env.PORT) || 1234;
+
+// ─── Telemetry Engine ─────────────────────────────────────────────────────────
+const telemetry = new TelemetryAggregator();
 
 // ─── Supabase client ──────────────────────────────────────────────────────────
 const supabase = getSupabase();
@@ -96,9 +101,34 @@ async function saveToDatabase(docName: string, snapshot: Uint8Array): Promise<vo
   }
 }
 
+// ─── Guard against saving empty docs during initial load ──────────────────────
+// When a single user refreshes, y-websocket destroys the old doc and creates a
+// new empty one. `bindState` is async but NOT awaited by y-websocket's `getYDoc`,
+// so the client's empty sync-step arrives before the DB content is loaded.
+// We track which docs are still loading so we can suppress premature saves.
+const docsCurrentlyLoading = new Set<string>();
+
+// Track the last known DB size per doc so we never overwrite a populated doc
+// with an effectively-empty one (Yjs empty doc encodes as ~2-4 bytes).
+const lastKnownDbSize = new Map<string, number>();
+
 // Debounced version — fires 3 s after the last update burst for a given doc
 const debouncedSave = debounce(
   (docName: string, snapshot: Uint8Array) => {
+    // Don't save while we're still loading this doc from DB
+    if (docsCurrentlyLoading.has(docName)) {
+      console.log(`[DB] Skipping save for "${docName}" — still loading from DB`);
+      return;
+    }
+
+    // Safety: don't overwrite a doc that had real content with an empty snapshot
+    const prevSize = lastKnownDbSize.get(docName) ?? 0;
+    if (prevSize > 100 && snapshot.byteLength <= 4) {
+      console.warn(`[DB] Refusing to overwrite "${docName}" (${prevSize}B) with empty snapshot (${snapshot.byteLength}B)`);
+      return;
+    }
+
+    lastKnownDbSize.set(docName, snapshot.byteLength);
     saveToDatabase(docName, snapshot);   // fire-and-forget; errors logged inside
   },
   3000
@@ -106,11 +136,48 @@ const debouncedSave = debounce(
 
 // ─── HTTP server ──────────────────────────────────────────────────────────────
 const server = http.createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
+  // CORS Headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', port: PORT }));
     return;
   }
+
+  if (req.url === '/telemetry' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body);
+        telemetry.logReport(payload);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid payload' }));
+      }
+    });
+    return;
+  }
+  
+  if (req.url === '/telemetry/stats' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(telemetry.getDashboardStats()));
+    return;
+  }
+
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Yjs TS Server Operational');
 });
@@ -195,9 +262,21 @@ setPersistence({
   bindState: async (docName: string, ydoc: YTypes.Doc): Promise<void> => {
     console.log(`[DB] Loading document: "${docName}"`);
 
-    const persisted = await loadFromDatabase(docName);
-    if (persisted) {
-      Y.applyUpdate(ydoc, persisted);
+    // Mark this doc as "loading" so the debounced save won't persist an
+    // empty merge that the sync handshake may produce before we finish.
+    docsCurrentlyLoading.add(docName);
+
+    try {
+      const persisted = await loadFromDatabase(docName);
+      if (persisted) {
+        // Remember the real content size before applying
+        lastKnownDbSize.set(docName, persisted.byteLength);
+        Y.applyUpdate(ydoc, persisted);
+        console.log(`[DB] Applied ${persisted.byteLength} bytes to "${docName}"`);
+      }
+    } finally {
+      // Always clear the loading flag so future saves proceed normally
+      docsCurrentlyLoading.delete(docName);
     }
 
     ydoc.on('update', (_update: Uint8Array) => {
@@ -209,6 +288,15 @@ setPersistence({
   writeState: async (docName: string, ydoc: YTypes.Doc): Promise<void> => {
     console.log(`[DB] Final flush for: "${docName}"`);
     const fullState = Y.encodeStateAsUpdate(ydoc);
+
+    // Safety: don't overwrite a populated doc with an empty one on disconnect
+    const prevSize = lastKnownDbSize.get(docName) ?? 0;
+    if (prevSize > 100 && fullState.byteLength <= 4) {
+      console.warn(`[DB] writeState: Refusing to overwrite "${docName}" (${prevSize}B) with empty state (${fullState.byteLength}B)`);
+      return;
+    }
+
+    lastKnownDbSize.set(docName, fullState.byteLength);
     await saveToDatabase(docName, fullState);   // await here — no debounce on shutdown
   },
 });

@@ -52,7 +52,6 @@ export async function uploadSharedImage(
   if (userError || !userData?.user) {
     throw new Error("You must be logged in to upload files.");
   }
-  const userId = userData.user.id;
 
   const {
     data: { session },
@@ -111,28 +110,20 @@ export async function uploadSharedImage(
   }
 
   // ── 3. Upload directly to Cloudinary using the signed ticket ─────────────
+  // Use the params object from the edge function VERBATIM — the signature was
+  // computed over every key/value in `params` (including tags like
+  // collaborator_Z). Manually re-building tags causes a signature mismatch.
   const formData = new FormData();
   formData.append("file", file);
   formData.append("api_key", ticket.api_key);
   formData.append("timestamp", String(ticket.timestamp));
   formData.append("signature", ticket.signature);
 
-  // Attach every signed param (skip timestamp — already appended above)
+  // Forward all signed params exactly as the edge function returned them
   for (const [key, value] of Object.entries(ticket.params)) {
     if (key !== "timestamp") {
       formData.append(key, String(value));
     }
-  }
-
-  // Unsigned fields — append after signed fields
-  const tags = noteId ? `user_${userId},note_${noteId}` : `user_${userId}`;
-  formData.append("tags", tags);
-
-  if (ticket.max_bytes) {
-    formData.append("max_bytes", String(ticket.max_bytes));
-  }
-  if (ticket.notification_url) {
-    formData.append("notification_url", ticket.notification_url);
   }
 
   const cloudinaryRes = await fetch(ticket.upload_url, {
