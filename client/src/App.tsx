@@ -7,7 +7,6 @@ import CollaborationPage from './Pages/CollaboratioPage/collaborationPage.tsx';
 import { AuthProvider } from './Context/AuthContext.tsx';
 import ProtectedRoute from './auth/protectedRoute.tsx';
 // import MyEditor from './Editor/blockNote.tsx';
-import  Testpage  from './test/testpage.tsx';
 import './App.css';
 
 const routes = (
@@ -16,7 +15,6 @@ const routes = (
       <Routes>
         <Route path='/login' element={<Login />} />
         <Route path='/signup' element={<SignUp />} />
-        <Route path='/test' element={<Testpage />} />
         <Route path='/shared' element ={<CollaborationPage/>} />
         <Route path='/' element={<ProtectedRoute redirectTo='/login'><Home /></ProtectedRoute>} />
         <Route path='/verify' element={<ProtectedRoute redirectTo='/login'><Verify /></ProtectedRoute>} />

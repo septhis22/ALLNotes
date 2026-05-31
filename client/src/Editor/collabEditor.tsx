@@ -319,7 +319,11 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = (props) => {
     });
 
     const parsedUrl = new URL(urlBase);
-    const backendHttp = `http://${parsedUrl.hostname}:${parsedUrl.port}`;
+    const isSecure = parsedUrl.protocol === 'wss:' || parsedUrl.protocol === 'https:';
+    const httpProtocol = isSecure ? 'https:' : 'http:';
+    const backendHttp = parsedUrl.port
+      ? `${httpProtocol}//${parsedUrl.hostname}:${parsedUrl.port}`
+      : `${httpProtocol}//${parsedUrl.hostname}`;
     const clientId = provider.awareness.clientID.toString();
     const telemetry = new TelemetryMonitor(clientId, backendHttp);
 

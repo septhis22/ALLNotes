@@ -43,7 +43,7 @@ export async function deleteSharedImage(
 
     const rawBody = await res.text();
 
-    const data = JSON.parse(rawBody);
+    JSON.parse(rawBody); // parse but ignore data to ensure it's valid JSON if needed
     if (!res.ok) {} else {}
   } catch (err) {}
 }

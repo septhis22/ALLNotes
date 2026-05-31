@@ -35,10 +35,9 @@ export const Verify = () => {
         // Check if we have tokens in the hash (successful verification)
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
-        const tokenType = hashParams.get('type');
 
         if (accessToken && refreshToken) {
-          const { data, error } = await getSupabase().auth.setSession({
+          const { error } = await getSupabase().auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
@@ -71,7 +70,7 @@ export const Verify = () => {
         const type = searchParams.get('type');
 
         if (token && type === 'signup') {
-          const { data, error } = await getSupabase().auth.verifyOtp({
+          const { error } = await getSupabase().auth.verifyOtp({
             token_hash: token,
             type: 'signup'
           });

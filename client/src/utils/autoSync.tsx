@@ -7,7 +7,7 @@ const autoSync= async(userId:string)=>{
         try{
             for(const note of unsycnedNotes){
                 try{
-                    const res = await notesRepository.updateOwned({
+                    await notesRepository.updateOwned({
                       id: note.id,
                       title: note.title,
                       note_data: note.note_data,

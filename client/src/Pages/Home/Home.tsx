@@ -73,7 +73,7 @@ const Testpage = () => {
       } else if (!cachedContent) {
         setSharedContent(null);
       }
-    }).catch(err => {
+    }).catch(() => {
       !cancelled;
     }).finally(() => {
       if (!cancelled) setLoadingShared(false);

@@ -6,7 +6,6 @@ import { useAuthContext } from "../../Context/AuthContext";
 import { useStore } from "../../store/store";
 import { updateNoteById, updateNoteSync } from "../../IndexDB/db";
 import autoSync from "../../utils/autoSync";
-import Collabdropdown from "../dropdown/Collabdropdown";
 import type{ Note } from "../../store/store";
 
 
@@ -129,11 +128,6 @@ export const NoteEditor = () => {
             </svg>
             Start Collab
           </button>
-          
-          {/* Dropdown positioned relative to button */}
-          {showAddCollab && (
-            <Collabdropdown onClose={() => { setShowAddCollab(false) }} />
-          )}
         </div>
         
         <button

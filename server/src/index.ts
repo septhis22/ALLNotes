@@ -143,6 +143,7 @@ const server = http.createServer((req: http.IncomingMessage, res: http.ServerRes
   }
 
   if (req.url === '/telemetry' && req.method === 'POST') {
+    res.setHeader('Access-Control-Allow-Origin', '*'); 
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
@@ -151,10 +152,10 @@ const server = http.createServer((req: http.IncomingMessage, res: http.ServerRes
       try {
         const payload = JSON.parse(body);
         telemetry.logReport(payload);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         res.end(JSON.stringify({ success: true }));
       } catch (e) {
-        res.writeHead(400);
+        res.writeHead(400, { 'Access-Control-Allow-Origin': '*' });
         res.end(JSON.stringify({ error: 'Invalid payload' }));
       }
     });

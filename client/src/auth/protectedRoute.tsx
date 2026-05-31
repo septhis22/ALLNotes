@@ -12,7 +12,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   redirectTo = "/login",
 }) => {
-  const { isAuthenticated, loading, userId } = useAuthContext();
+  const { isAuthenticated, loading } = useAuthContext();
   const location = useLocation();
 
   // If still loading after 3 seconds, force render to avoid infinite loading

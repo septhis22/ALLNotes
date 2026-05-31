@@ -13,6 +13,9 @@ export function blocksToYDoc<
   blocks: PartialBlock<BSchema, ISchema, SSchema>[],
   xmlFragment?: string,
 ): Y.Doc {
+  void editor;
+  void blocks;
+  void xmlFragment;
   throw new Error("Not implemented");
 }
 
@@ -26,5 +29,8 @@ export function blocksToYXmlFragment<
   blocks: Block<BSchema, ISchema, SSchema>[],
   xmlFragment?: Y.XmlFragment,
 ): Y.XmlFragment {
+  void editor;
+  void blocks;
+  void xmlFragment;
   throw new Error("Not implemented");
 }
