@@ -41,7 +41,7 @@ interface GlobalStore {
   setUserD: (userD: UserDetails) => void;
   setAllowedStorage: (allowed_storage: number) => void;
   setSharedNotes: (sharedNotes: sharedNote[] | ((prevSharedNotes: sharedNote[]) => sharedNote[])) => void;
-  setAllSharedGroups: (groups: OwnerNoteGroup[]) => void;
+  setAllSharedGroups: (groups: OwnerNoteGroup[] | ((prev: OwnerNoteGroup[]) => OwnerNoteGroup[])) => void;
 }
 
 export const useStore = create<GlobalStore>((set) => ({
@@ -66,5 +66,8 @@ export const useStore = create<GlobalStore>((set) => ({
     set((state) => ({ 
       sharedNotes: typeof sharedNotesOrFn === 'function' ? sharedNotesOrFn(state.sharedNotes) : sharedNotesOrFn 
     })),
-  setAllSharedGroups: (allSharedGroups: OwnerNoteGroup[]) => set({ allSharedGroups }),
+  setAllSharedGroups: (groupsOrFn: OwnerNoteGroup[] | ((prev: OwnerNoteGroup[]) => OwnerNoteGroup[])) =>
+    set((state) => ({
+      allSharedGroups: typeof groupsOrFn === 'function' ? groupsOrFn(state.allSharedGroups) : groupsOrFn
+    })),
 }));

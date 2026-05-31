@@ -206,17 +206,34 @@ export default function NewSidebar() {
       try {
         const newNote = await SharedNotesRepository.createNewSharedNote(userId, title);
         if (newNote) {
-          setSharedNotes((prev: any) => [
-            ...prev,
-            {
-              id: newNote.id,
-              owner: newNote.owner_id,
-              title: newNote.title,
-              updatedat: newNote.updated_at,
-              content: newNote.content,
-              createdat: newNote.created_at,
-            },
-          ]);
+          // Update allSharedGroups so the sidebar re-renders immediately
+          const newNestedNote = {
+            id: newNote.id,
+            title: newNote.title,
+            content: newNote.content ?? '',
+            created_at: newNote.created_at,
+            updated_at: newNote.updated_at,
+          };
+          setAllSharedGroups((prev: any) => {
+            const groups = [...prev];
+            const myGroupIdx = groups.findIndex(
+              (g: any) => g.owner_email.toLowerCase() === myEmail
+            );
+            if (myGroupIdx >= 0) {
+              groups[myGroupIdx] = {
+                ...groups[myGroupIdx],
+                notes: [...groups[myGroupIdx].notes, newNestedNote],
+              };
+            } else {
+              // First shared note — create the group
+              groups.push({
+                owner_name: userD?.userName ?? 'You',
+                owner_email: userD?.email ?? '',
+                notes: [newNestedNote],
+              });
+            }
+            return groups;
+          });
         }
       } catch (error) {}
     }
@@ -284,11 +301,17 @@ export default function NewSidebar() {
     
     // Save previous state for rollback
     const prevNotes = [...notes];
-    const prevSharedNotes = [...sharedNotes];
+    const prevAllSharedGroups = allSharedGroups.map(g => ({ ...g, notes: [...g.notes] }));
     
     // Optimistic UI updates
     if (isShared) {
-      setSharedNotes(sharedNotes.filter(n => n.id !== noteId));
+      // Remove from allSharedGroups so the sidebar re-renders immediately
+      setAllSharedGroups(
+        allSharedGroups
+          .map(g => ({ ...g, notes: g.notes.filter(n => n.id !== noteId) }))
+          .filter(g => g.notes.length > 0)
+      );
+      if (selectedId === noteId) setId("");
     } else {
       setNotes(notes.filter(n => n.id !== noteId));
       if (selectedId === noteId) setId("");
@@ -302,11 +325,9 @@ export default function NewSidebar() {
     } catch (err) {
       // Rollback UI
       if (isShared) {
-        setSharedNotes(prevSharedNotes);
+        setAllSharedGroups(prevAllSharedGroups);
       } else {
         setNotes(prevNotes);
-        // We'd have to re-add to indexdb technically, but since sync happens
-        // it may pull it down or the user can refresh
       }
     }
   };
