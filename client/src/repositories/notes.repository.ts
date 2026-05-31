@@ -1,4 +1,5 @@
 import { getSupabase } from '../lib/supabase.ts';
+import { useStore } from '../store/store';
 
 export interface NoteRow {
   id: string;
@@ -23,10 +24,17 @@ export interface UpdateNoteInput {
 }
 
 const getCurrentUserId = async (): Promise<string> => {
+  const userId = useStore.getState().userId;
+  if (userId && userId !== 'Guest' && userId !== '') {
+    return userId;
+  }
+  // Fallback: fetch from auth (cold start / race condition)
   const { data, error } = await getSupabase().auth.getUser();
   if (error || !data.user?.id) {
     throw new Error(error?.message ?? 'User not authenticated');
   }
+  // Cache for subsequent calls
+  useStore.getState().setUserId(data.user.id);
   return data.user.id;
 };
 

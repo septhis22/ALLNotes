@@ -2,6 +2,7 @@
 import { useCallback } from "react";
 import { useAuthContext } from "../Context/AuthContext";
 import { getSupabase } from "../lib/supabase";
+import { useStore } from "../store/store";
 
 export const useVerifyUser = () => {
   const { userId, setUserId } = useAuthContext();
@@ -18,6 +19,7 @@ export const useVerifyUser = () => {
 
         if (user?.id) {
           setUserId(user.id);
+          useStore.getState().setUserId(user.id);
           return user.id;
         } else {
           setUserId("Guest");
@@ -30,6 +32,7 @@ export const useVerifyUser = () => {
     }
 
     // If userId is already set and not "Guest", return it
+    useStore.getState().setUserId(userId);
     return userId;
   }, [userId, setUserId]);
 

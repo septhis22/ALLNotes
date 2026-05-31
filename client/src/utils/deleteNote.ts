@@ -20,7 +20,8 @@ export async function deleteNoteCloud(params: DeleteNoteParams): Promise<void> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
+      "Authorization": `Bearer ${session.access_token}`,
+      "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY // 👈 Add this line right here
     },
     body: JSON.stringify(params),
   });

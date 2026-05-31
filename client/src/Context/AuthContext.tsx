@@ -60,6 +60,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
       setProfile(null);
       setUserId("Guest");
       setUserD({ userName: "Guest", email: "" });
+      useStore.getState().setUserId("Guest");
+      useStore.getState().setUserD({ userName: "Guest", email: "" });
       setLoading(false);
       return;
     }
@@ -68,10 +70,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
       const fetchedProfile = await fetchProfile(authUser.id);
       setProfile(fetchedProfile);
       setUserId(authUser.id);
-      setUserD(buildUserDetails(authUser, fetchedProfile));
+      const details = buildUserDetails(authUser, fetchedProfile);
+      setUserD(details);
+      useStore.getState().setUserId(authUser.id);
+      useStore.getState().setUserD(details);
     } catch (err) {
       setUserId(authUser.id);
-      setUserD({ userName: authUser.email?.split('@')[0] || "User", email: authUser.email || "" });
+      const fallbackDetails = { userName: authUser.email?.split('@')[0] || "User", email: authUser.email || "" };
+      setUserD(fallbackDetails);
+      useStore.getState().setUserId(authUser.id);
+      useStore.getState().setUserD(fallbackDetails);
     } finally {
       setLoading(false);
     }
@@ -121,6 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
 
         if (authUser) {
           setUserId(authUser.id);
+          useStore.getState().setUserId(authUser.id);
           // Try to fetch profile
           try {
             const { data: profileData } = await getSupabase()
@@ -139,19 +148,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
             } : null;
             
             setProfile(profile);
-            setUserD({
+            const initDetails = {
               userName: profile?.userName ?? authUser.email?.split('@')[0] ?? "User",
               email: profile?.email ?? authUser.email ?? ""
-            });
+            };
+            setUserD(initDetails);
+            useStore.getState().setUserD(initDetails);
           } catch (profileErr) {
-            setUserD({ 
+            const fallbackDetails = { 
               userName: authUser.email?.split('@')[0] ?? "User", 
               email: authUser.email ?? "" 
-            });
+            };
+            setUserD(fallbackDetails);
+            useStore.getState().setUserD(fallbackDetails);
           }
         } else {
           setUserId("Guest");
           setUserD({ userName: "Guest", email: "" });
+          useStore.getState().setUserId("Guest");
+          useStore.getState().setUserD({ userName: "Guest", email: "" });
         }
 
         setLoading(false);
@@ -181,6 +196,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
   const signOut = async () => {
     await getSupabase().auth.signOut();
     setProfile(null);
+    useStore.getState().setUserId("Guest");
+    useStore.getState().setUserD({ userName: "Guest", email: "" });
   };
 
     // Use React.createElement instead of JSX to comply with 'erasableSyntaxOnly'

@@ -1,6 +1,7 @@
 // src/lib/uploadFile.ts
 
 import { getSupabase } from "../lib/supabase";
+import { useStore } from "../store/store";
 
 interface UploadOptions {
   folder?: string;
@@ -39,7 +40,9 @@ export async function uploadFileToCloudinary(
   if (userError || !userData?.user) {
     throw new Error("You must be logged in to upload files.");
   }
-  const userId = userData.user.id;
+  // Prefer store userId to avoid redundant extraction; fall back to auth response
+  const storeUserId = useStore.getState().userId;
+  const userId = (storeUserId && storeUserId !== 'Guest') ? storeUserId : userData.user.id;
 
   // After getUser() the session is guaranteed to be fresh
   const {

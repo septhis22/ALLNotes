@@ -25,7 +25,7 @@ const Login = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const { userId, setUserId } = useAuthContext();
+  const { userId, setUserId, userD } = useAuthContext();
   const verifyUser = useVerifyUser();
 
   // Check for existing valid token on component mount
@@ -139,13 +139,15 @@ const Login = () => {
               </Link>
             </p>
           </form>
-          <button 
+          {userId && userId !== "Guest" && (
+            <button 
               onClick={handleAutoLogin}
               className="w-full mt-3 py-2 bg-green-100 text-green-700 border border-green-300 rounded hover:bg-green-200 hover:border-green-400 transition-colors duration-200 font-medium text-sm shadow-sm"
               disabled={isAuthenticating}
             >
-              {`Continue as ${userId}`}
+              {`Continue as ${userD?.userName && userD.userName !== "Guest" ? userD.userName : userD?.email || "last login"}`}
             </button>
+          )}
 
         </div>
       </div>

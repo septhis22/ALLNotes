@@ -24,7 +24,8 @@ export async function deleteCloudinaryFile(url: string): Promise<void> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
+        "Authorization": `Bearer ${session.access_token}`,
+        "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY // 👈 Added this line
       },
       body: JSON.stringify({ url }),  // only URL — server reads size from DB
     });
@@ -32,8 +33,12 @@ export async function deleteCloudinaryFile(url: string): Promise<void> {
     const rawBody = await res.text();
 
     JSON.parse(rawBody); // parse but ignore data to ensure it's valid JSON if needed
-    if (!res.ok) {} else {}
+    if (!res.ok) {
+      // Handle your error here
+    } else {
+      // Handle success here
+    }
   } catch (err) {
-    1
+    console.error("Failed to delete Cloudinary file:", err);
   }
 }

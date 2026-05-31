@@ -70,7 +70,7 @@ function NoteRow({
   isSelected: boolean;
   isShared: boolean;
   onClick: () => void;
-  onDelete: (e: React.MouseEvent) => void;
+  onDelete?: (e: React.MouseEvent) => void;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -92,7 +92,7 @@ function NoteRow({
         </span>
       </button>
 
-      {hovered && (
+      {hovered && onDelete && (
         <button
           onClick={onDelete}
           className="bg-transparent border-none cursor-pointer p-1 text-gray-500 hover:text-red-400 transition-colors"
@@ -400,7 +400,6 @@ export default function NewSidebar() {
                   isSelected={selectedId === note.id}
                   isShared={true}
                   onClick={() => handleSelect(note.id, true)}
-                  onDelete={(e) => handleDelete(e, note.id, true)}
                 />
               ))}
             </div>
