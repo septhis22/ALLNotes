@@ -119,7 +119,7 @@ export default function NewSidebar() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const { notes, setNotes, setId, sharedNotes, setSharedNotes, allSharedGroups, setAllSharedGroups } = useStore();
+  const { notes, setNotes, setId, allSharedGroups, setAllSharedGroups } = useStore();
   const [, setSyncLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { userId, setUserId, userD } = useAuthContext();
