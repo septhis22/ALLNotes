@@ -196,12 +196,17 @@ wss.on('connection', (conn: WebSocket, req: http.IncomingMessage) => {
 
     setupWSConnection(conn, req);
 
+    // Log active connections for this room
+    console.log(`[WS] Connected to room "${cleanRoomName}" — total server connections: ${wss.clients.size}`);
+
     // Replay any messages the client sent while we were authenticating
     for (const msg of earlyMessages) {
       conn.emit('message', msg);
     }
 
-    conn.on('close', () => {});
+    conn.on('close', () => {
+      console.log(`[WS] Disconnected from room "${cleanRoomName}" — remaining connections: ${wss.clients.size}`);
+    });
 
     conn.on('error', (err: Error) => {});
   };

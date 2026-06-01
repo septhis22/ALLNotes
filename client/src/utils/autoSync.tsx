@@ -4,6 +4,8 @@ import { notesRepository } from "../repositories";
 const autoSync= async(userId:string)=>{
     const unsycnedNotes  = await getUnsyncedNotes(userId);
     if(userId!=="Guest"){
+        console.time('sync-to-supabase');
+        console.log(`[AutoSync] Syncing ${unsycnedNotes.length} unsynced note(s) to Supabase…`);
         try{
             for(const note of unsycnedNotes){
                 try{
@@ -17,6 +19,7 @@ const autoSync= async(userId:string)=>{
                 }catch(error){}
             }
         }catch{}
+        console.timeEnd('sync-to-supabase');
     }
     else{
         return;
